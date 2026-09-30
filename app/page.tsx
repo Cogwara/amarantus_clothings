@@ -4,8 +4,10 @@ import * as React from 'react';
 import Link from 'next/link';
 import {
   ShoppingBag,
+  ShoppingCart,
   Search,
   Phone,
+  PhoneCall,
   MessageCircle,
   MapPin,
   Clock,
@@ -22,9 +24,17 @@ import {
   Heart,
   ExternalLink,
   ChevronRight,
+  ChevronDown,
   Filter,
   Send,
   User,
+  Star,
+  HelpCircle,
+  Package,
+  Zap,
+  Tag,
+  Gift,
+  Check,
 } from 'lucide-react';
 import { formatNaira } from '@/lib/calculations';
 import { Product } from '@/lib/types';
@@ -55,6 +65,37 @@ export default function FrontShopPage() {
   const [selectedCondition, setSelectedCondition] = React.useState('');
   const [clearanceOnly, setClearanceOnly] = React.useState(false);
   const [sortBy, setSortBy] = React.useState('newest');
+
+  // Jumia Layout States: Dropdowns, Hero Slide, and Flash Sale Countdown
+  const [accountDropdownOpen, setAccountDropdownOpen] = React.useState(false);
+  const [helpDropdownOpen, setHelpDropdownOpen] = React.useState(false);
+  const [heroSlide, setHeroSlide] = React.useState(0);
+  const [timeLeft, setTimeLeft] = React.useState({
+    hours: 4,
+    minutes: 22,
+    seconds: 15,
+  });
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
+        if (prev.minutes > 0) return { ...prev, minutes: 59, seconds: 59 };
+        if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
+        return { hours: 6, minutes: 30, seconds: 0 };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  React.useEffect(() => {
+    const closeDropdowns = () => {
+      setAccountDropdownOpen(false);
+      setHelpDropdownOpen(false);
+    };
+    window.addEventListener('click', closeDropdowns);
+    return () => window.removeEventListener('click', closeDropdowns);
+  }, []);
 
   // Product Detail Modal
   const [detailProduct, setDetailProduct] = React.useState<Product | null>(null);
@@ -249,176 +290,585 @@ export default function FrontShopPage() {
     }
   };
 
+  const getCategoryIcon = (name: string) => {
+    const lower = name.toLowerCase();
+    if (lower.includes('dress')) return '👗';
+    if (lower.includes('shirt')) return '👔';
+    if (lower.includes('trouser') || lower.includes('jean')) return '👖';
+    if (lower.includes('shoe') || lower.includes('sneaker')) return '👟';
+    if (lower.includes('bag')) return '👜';
+    if (lower.includes('jacket') || lower.includes('coat')) return '🧥';
+    if (lower.includes('skirt')) return '👗';
+    if (lower.includes('child') || lower.includes('kid')) return '👶';
+    if (lower.includes('top')) return '👚';
+    return '👕';
+  };
+
   return (
     <div className="min-h-screen bg-[#F8FAF9] text-[#17211B] flex flex-col font-sans">
-      {/* Top Banner Notice: Thursday Market Routine & Nationwide Delivery */}
-      <div className="bg-[#16803C] text-white text-xs py-2 px-4 text-center font-medium flex items-center justify-center gap-2">
-        <Sparkles className="w-3.5 h-3.5 text-[#F28C28]" />
-        <span>
-          <strong>Weekly Thursday Thrift Drops:</strong> Fresh Grade A bales from Katangua & Balogun markets! Doorstep delivery nationwide.
-        </span>
+      {/* Top Utility Header Bar (Jumia style) */}
+      <div className="bg-[#F8FAF9] border-b border-[#DDE5DF] text-xs py-1.5 px-4 hidden sm:block">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1 text-[#D96F0B] font-bold">
+              <Star className="w-3.5 h-3.5 fill-[#F28C28] text-[#F28C28]" />
+              <span>Sell on ClothShop</span>
+            </span>
+            <span className="text-[#DDE5DF]">|</span>
+            <span className="text-[11px] text-[#66736B]">Katangua Market Direct Thrift Bales</span>
+          </div>
+
+          <div className="flex items-center gap-4 text-[11px] text-[#66736B] font-semibold">
+            <span className="text-[#16803C] font-bold">CLOTHSHOP PAY</span>
+            <span className="text-gray-300">•</span>
+            <span>KATANGUA EXPRESS</span>
+            <span className="text-gray-300">•</span>
+            <span>DOORSTEP WAYBILL</span>
+            <span className="text-gray-300">•</span>
+            <span className="text-[#17211B] font-bold">🇳🇬 NGN (₦)</span>
+          </div>
+        </div>
       </div>
 
-      {/* Main Storefront Header */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#DDE5DF] shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-3">
-          {/* Brand */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-[10px] bg-[#16803C] text-white flex items-center justify-center font-black text-lg shadow-sm">
-              CS
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-base sm:text-lg text-[#17211B] leading-none">
-                  {shop.name}
-                </span>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#FFF1E2] text-[#D96F0B]">
-                  Thrift
-                </span>
-              </div>
-              <p className="text-[11px] text-[#66736B] mt-0.5 flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-[#16803C]" />
-                <span>Katangua Market, Lagos</span>
-              </p>
+      {/* Main Jumia-Style Header */}
+      <header className="sticky top-0 z-40 bg-white border-b border-[#DDE5DF] shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 sm:h-20 flex items-center justify-between gap-3 sm:gap-6">
+          {/* Jumia-Style Logo */}
+          <Link href="/" className="flex items-center gap-1.5 shrink-0 group">
+            <span className="text-2xl sm:text-3xl font-black tracking-tight text-[#17211B]">
+              CLOTHSHOP
+            </span>
+            <div className="w-6 h-6 rounded-full bg-[#F28C28] flex items-center justify-center text-white text-xs font-black shadow-sm group-hover:scale-110 transition-transform">
+              ★
             </div>
           </Link>
 
-          {/* Search bar on desktop */}
-          <div className="hidden md:flex flex-1 max-w-md mx-4">
-            <div className="relative w-full">
-              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-[#66736B]" />
+          {/* Centered Search Bar with attached Orange Button */}
+          <div className="hidden md:flex flex-1 max-w-2xl">
+            <div className="flex items-center w-full border-2 border-[#F28C28] rounded-[8px] overflow-hidden bg-white shadow-sm focus-within:ring-2 focus-within:ring-[#F28C28]/20 transition-all">
+              <div className="pl-3.5 text-[#8A968F] shrink-0">
+                <Search className="w-4 h-4" />
+              </div>
               <input
                 type="text"
-                placeholder="Search dresses, vintage shirts, jeans, sneakers..."
+                placeholder="Search products, brands and categories"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-xs rounded-full border border-[#DDE5DF] bg-[#F8FAF9] focus:bg-white focus:border-[#16803C] focus:outline-none transition-all"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const el = document.getElementById('catalog');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                className="w-full px-3 py-2 text-xs sm:text-sm text-[#17211B] bg-transparent focus:outline-none placeholder:text-[#8A968F]"
               />
+              <button
+                onClick={() => {
+                  const el = document.getElementById('catalog');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="px-6 py-2.5 bg-[#F28C28] hover:bg-[#D96F0B] text-white text-xs sm:text-sm font-bold tracking-wider uppercase transition-colors shrink-0 flex items-center gap-1.5 shadow-inner"
+              >
+                <span>Search</span>
+              </button>
             </div>
           </div>
 
-          {/* Right Header: WhatsApp, Shopping Bag & Staff Portal */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <a
-              href={`https://wa.me/${shop.phone.replace(/\D/g, '')}?text=Hello%20${encodeURIComponent(
-                shop.name
-              )},%20I%20want%20to%20inquire%20about%20your%20clothing%20items.`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#EAF7EE] text-[#16803C] text-xs font-bold hover:bg-[#16803C] hover:text-white transition-colors"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span>WhatsApp Us</span>
-            </a>
+          {/* Right Header Navigation: Account, Help, Cart */}
+          <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+            {/* Account Dropdown */}
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => {
+                  setAccountDropdownOpen(!accountDropdownOpen);
+                  setHelpDropdownOpen(false);
+                }}
+                className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] hover:bg-[#F8FAF9] text-xs sm:text-sm font-semibold text-[#17211B] transition-colors"
+              >
+                <User className="w-5 h-5 text-[#17211B]" />
+                <span className="hidden lg:inline">Account</span>
+                <ChevronDown className="w-3.5 h-3.5 text-[#66736B]" />
+              </button>
 
-            {/* Shopping Bag Button */}
+              {accountDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-60 bg-white rounded-[14px] shadow-2xl border border-[#DDE5DF] p-3 z-50 animate-fadeIn">
+                  <Link
+                    href="/login"
+                    onClick={() => setAccountDropdownOpen(false)}
+                    className="w-full flex items-center justify-center py-2.5 px-3 bg-[#16803C] hover:bg-[#0F5C2E] text-white text-xs font-bold rounded-[10px] transition-colors shadow-sm"
+                  >
+                    Staff & Owner Sign In
+                  </Link>
+                  <div className="my-2.5 border-t border-[#F0F4F1]" />
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setAccountDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[#17211B] hover:bg-[#F8FAF9] rounded-[8px] transition-colors"
+                  >
+                    <User className="w-4 h-4 text-[#16803C]" />
+                    <span>Management Dashboard</span>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setAccountDropdownOpen(false);
+                      setCartOpen(true);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[#17211B] hover:bg-[#F8FAF9] rounded-[8px] transition-colors"
+                  >
+                    <ShoppingBag className="w-4 h-4 text-[#F28C28]" />
+                    <span>My Shopping Bag ({totalCartCount})</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Help Dropdown */}
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => {
+                  setHelpDropdownOpen(!helpDropdownOpen);
+                  setAccountDropdownOpen(false);
+                }}
+                className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] hover:bg-[#F8FAF9] text-xs sm:text-sm font-semibold text-[#17211B] transition-colors"
+              >
+                <HelpCircle className="w-5 h-5 text-[#17211B]" />
+                <span className="hidden lg:inline">Help</span>
+                <ChevronDown className="w-3.5 h-3.5 text-[#66736B]" />
+              </button>
+
+              {helpDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-[14px] shadow-2xl border border-[#DDE5DF] p-3 z-50 animate-fadeIn">
+                  <a
+                    href={`https://wa.me/${shop.phone.replace(/\D/g, '')}?text=Hello%20${encodeURIComponent(
+                      shop.name
+                    )},%20I%20need%20assistance%20with%20an%20order.`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setHelpDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-[#16803C] bg-[#EAF7EE] hover:bg-[#d4f2dc] rounded-[8px] transition-colors mb-1.5"
+                  >
+                    <MessageCircle className="w-4 h-4 text-[#16803C]" />
+                    <span>Live Chat on WhatsApp</span>
+                  </a>
+                  <a
+                    href={`tel:${shop.phone.replace(/\D/g, '')}`}
+                    onClick={() => setHelpDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#17211B] hover:bg-[#F8FAF9] rounded-[8px] transition-colors"
+                  >
+                    <Phone className="w-4 h-4 text-[#F28C28]" />
+                    <span>Call Customer Care</span>
+                  </a>
+                  <a
+                    href="#contact"
+                    onClick={() => setHelpDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#17211B] hover:bg-[#F8FAF9] rounded-[8px] transition-colors"
+                  >
+                    <MapPin className="w-4 h-4 text-[#66736B]" />
+                    <span>Katangua Physical Shop</span>
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Cart Button */}
             <button
               onClick={() => setCartOpen(true)}
-              className="relative p-2.5 rounded-[12px] bg-[#16803C] text-white hover:bg-[#0F5C2E] transition-all flex items-center gap-2 shadow-sm"
-              aria-label="View Shopping Bag"
+              className="flex items-center gap-2 px-3 py-2 rounded-[8px] hover:bg-[#F8FAF9] text-xs sm:text-sm font-semibold text-[#17211B] transition-colors relative"
+              aria-label="View Cart"
             >
-              <ShoppingBag className="w-5 h-5" />
-              <span className="hidden sm:inline text-xs font-bold">Bag</span>
-              {totalCartCount > 0 && (
-                <span className="w-5 h-5 rounded-full bg-[#F28C28] text-white text-[11px] font-bold flex items-center justify-center border-2 border-white shadow">
-                  {totalCartCount}
-                </span>
-              )}
+              <div className="relative">
+                <ShoppingCart className="w-5 h-5 text-[#17211B]" />
+                {totalCartCount > 0 && (
+                  <span className="absolute -top-2 -right-2.5 w-4 h-4 rounded-full bg-[#F28C28] text-white text-[10px] font-bold flex items-center justify-center border-2 border-white shadow">
+                    {totalCartCount}
+                  </span>
+                )}
+              </div>
+              <span className="hidden sm:inline font-bold">Cart</span>
             </button>
-
-            {/* Staff / Owner Portal Switch */}
-            <Link
-              href="/dashboard"
-              className="p-2 rounded-[10px] border border-[#DDE5DF] bg-white text-[#66736B] hover:text-[#17211B] hover:bg-[#F8FAF9] text-xs font-semibold flex items-center gap-1.5"
-              title="Management Dashboard"
-            >
-              <User className="w-4 h-4 text-[#16803C]" />
-              <span className="hidden lg:inline">Staff Portal</span>
-            </Link>
           </div>
         </div>
 
         {/* Mobile Search Bar */}
         <div className="md:hidden px-4 pb-3">
-          <div className="relative w-full">
-            <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-[#66736B]" />
+          <div className="flex items-center w-full border-2 border-[#F28C28] rounded-[8px] overflow-hidden bg-white shadow-sm">
+            <div className="pl-3 text-[#8A968F] shrink-0">
+              <Search className="w-4 h-4" />
+            </div>
             <input
               type="text"
-              placeholder="Search dresses, shirts, jeans, sneakers..."
+              placeholder="Search products, brands and categories..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-xs rounded-full border border-[#DDE5DF] bg-[#F8FAF9] focus:bg-white focus:border-[#16803C] focus:outline-none"
+              className="w-full px-2.5 py-2 text-xs text-[#17211B] bg-transparent focus:outline-none"
             />
+            <button
+              onClick={() => {
+                const el = document.getElementById('catalog');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-4 py-2 bg-[#F28C28] text-white text-xs font-bold uppercase shrink-0"
+            >
+              Search
+            </button>
+          </div>
+        </div>
+
+        {/* Sub-Navigation Ribbon (Under Search Bar) */}
+        <div className="bg-[#FAFBFB] border-t border-[#EAEFEA] overflow-x-auto no-scrollbar">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-6 py-2 text-xs font-medium text-[#17211B] whitespace-nowrap">
+            <button
+              onClick={() => {
+                setSelectedCategory('');
+                setClearanceOnly(false);
+              }}
+              className={`flex items-center gap-1.5 hover:text-[#16803C] transition-colors ${
+                selectedCategory === '' && !clearanceOnly ? 'text-[#16803C] font-bold' : 'text-[#66736B]'
+              }`}
+            >
+              <span>🏛️</span>
+              <span>All Thrift</span>
+            </button>
+
+            <button
+              onClick={() => setClearanceOnly(true)}
+              className={`flex items-center gap-1.5 transition-colors ${
+                clearanceOnly ? 'text-[#DC2626] font-extrabold' : 'text-[#DC2626] font-bold hover:text-red-700'
+              }`}
+            >
+              <span>🔥</span>
+              <span>Clearance Deals</span>
+            </button>
+
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => {
+                  setSelectedCategory(c.id);
+                  setClearanceOnly(false);
+                }}
+                className={`flex items-center gap-1.5 hover:text-[#16803C] transition-colors ${
+                  selectedCategory === c.id && !clearanceOnly ? 'text-[#16803C] font-bold' : 'text-[#66736B]'
+                }`}
+              >
+                <span>{getCategoryIcon(c.name)}</span>
+                <span>{c.name}</span>
+              </button>
+            ))}
+
+            <a
+              href="#contact"
+              className="flex items-center gap-1.5 text-[#16803C] hover:underline font-semibold"
+            >
+              <span>🚚</span>
+              <span>Thursday Market Drop</span>
+            </a>
           </div>
         </div>
       </header>
 
-      {/* Hero Showcase Section */}
-      <section className="bg-gradient-to-b from-white to-[#F8FAF9] border-b border-[#DDE5DF] py-8 sm:py-12 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="space-y-4 max-w-xl text-center md:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FFF1E2] text-[#D96F0B] text-xs font-bold border border-[#FCD9B8]">
-              <Flame className="w-4 h-4 text-[#F28C28]" />
-              <span>Authentic UK & European First-Selection Thrift</span>
+      {/* Hero Promotional Banner Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 w-full">
+        <div className="relative rounded-[16px] overflow-hidden bg-gradient-to-r from-[#07381C] via-[#0D5C2E] to-[#0A4723] text-white shadow-xl min-h-[320px] sm:min-h-[380px] flex items-center border border-[#16803C]">
+          {/* Subtle Background Pattern Accent */}
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]" />
+
+          <div className="relative z-10 w-full p-6 sm:p-10 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
+            {/* Left Content */}
+            <div className="max-w-xl space-y-4 text-center md:text-left">
+              {/* Tagline */}
+              <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-black tracking-wider uppercase text-white/90">
+                <span className="text-[#F28C28] text-base">★</span>
+                <span>• NAIJA WE DEY FOR YOU •</span>
+              </div>
+
+              {/* Giant Headline */}
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08] text-white">
+                Celebrate Nigeria <br />
+                <span className="text-[#FFDC73]">Celebrate Savings</span>
+              </h1>
+
+              {/* Up to 40% Off Pill */}
+              <div className="pt-1">
+                <div className="inline-flex items-center gap-2.5 px-4 sm:px-5 py-2 rounded-full bg-white text-[#17211B] shadow-lg">
+                  <span className="text-sm sm:text-base font-black text-[#16803C]">
+                    Up to <span className="text-lg sm:text-xl font-extrabold text-[#17211B]">40% off</span>
+                  </span>
+                  <span className="text-xs text-[#66736B] font-medium">• UK Grade A Thrift</span>
+                </div>
+              </div>
+
+              {/* Shop Now CTA */}
+              <div className="pt-2">
+                <a
+                  href="#catalog"
+                  className="inline-flex items-center gap-2 text-base font-bold text-white hover:text-[#FFDC73] transition-colors group"
+                >
+                  <span className="underline underline-offset-4 decoration-2">Shop Now</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
+                </a>
+              </div>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-black text-[#17211B] tracking-tight leading-tight">
-              Curated Thrift Fashion, Handpicked For You.
-            </h1>
-
-            <p className="text-sm sm:text-base text-[#66736B] leading-relaxed">
-              Shop exclusive Grade A dresses, corporate blouses, denim jackets, and designer shirts from Lagos&apos;s premier used-clothing specialists. Order directly online or chat on WhatsApp!
-            </p>
-
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
-              <a href="#catalog">
-                <Button variant="primary" size="lg" className="font-bold gap-2 shadow-md">
-                  <span>Browse Store Collection</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </a>
-
-              <a href="#contact">
-                <Button variant="outline" size="lg" className="font-bold gap-2 bg-white">
-                  <MapPin className="w-4 h-4 text-[#16803C]" />
-                  <span>Visit Katangua Shop</span>
-                </Button>
-              </a>
-            </div>
-
-            {/* Trust highlights */}
-            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#F0F4F1] text-xs text-[#17211B]">
-              <div className="flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-[#16803C] shrink-0" />
-                <span>Grade A Quality</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Truck className="w-4 h-4 text-[#F28C28] shrink-0" />
-                <span>Fast Delivery</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-[#16803C] shrink-0" />
-                <span>Fresh Weekly Drops</span>
+            {/* Right Fashion Montage Graphic */}
+            <div className="relative w-full md:w-1/2 flex justify-center items-center">
+              <div className="relative w-72 sm:w-96 aspect-[4/3] rounded-[16px] overflow-hidden shadow-2xl border-4 border-white/20 group">
+                <img
+                  src="https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80"
+                  alt="Celebrate Nigeria Thrift Fashion"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4 text-white">
+                  <span className="text-[11px] font-bold text-[#F28C28] uppercase tracking-wider">
+                    Direct From Katangua & Balogun
+                  </span>
+                  <p className="text-xs sm:text-sm font-bold text-white">
+                    Grade A Handpicked Okrika Drops Every Thursday
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Hero Featured Collage */}
-          <div className="relative w-full max-w-md aspect-[4/3] rounded-[16px] overflow-hidden shadow-xl border-4 border-white">
-            <img
-              src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=80"
-              alt="Elegance Thrift Collection"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-5 text-white">
-              <span className="text-xs uppercase font-bold tracking-wider text-[#F28C28]">
-                Lagos Thrift Haven
-              </span>
-              <h3 className="text-lg font-bold">100% Unique Pieces • Single Stock Only</h3>
-              <p className="text-xs text-gray-200 mt-0.5">
-                Fastest finger wins! When it&apos;s gone, it&apos;s gone.
-              </p>
+          {/* Slide Indicator Dots (Just like Jumia banner bottom) */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full">
+            {[0, 1, 2, 3, 4, 5].map((idx) => (
+              <span
+                key={idx}
+                className={`h-1.5 rounded-full transition-all ${
+                  idx === heroSlide ? 'w-5 bg-white' : 'w-1.5 bg-white/40'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Signature 6 Quick Action Tiles Row (Jumia Style) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 w-full">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+          {/* 1. Call to Order */}
+          <a
+            href={`tel:${shop.phone.replace(/\D/g, '')}`}
+            className="group relative rounded-[16px] p-3.5 sm:p-4 flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#FF6B8B] to-[#FF8E53] text-white shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+          >
+            <div className="flex items-center justify-between text-xs font-bold leading-tight">
+              <span>Call to Order</span>
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
             </div>
+            <div className="my-3 flex justify-center">
+              <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center text-[#FF6B8B] shadow-inner group-hover:scale-110 transition-transform">
+                <PhoneCall className="w-6 h-6 stroke-[2.5]" />
+              </div>
+            </div>
+            <div className="bg-white/95 text-[#17211B] text-[9px] sm:text-[10px] font-black uppercase tracking-wider py-1 px-2 rounded-full text-center shadow-sm">
+              ORDER WITH EASE
+            </div>
+          </a>
+
+          {/* 2. Make Money / Wholesale Bales */}
+          <a
+            href="#contact"
+            className="group relative rounded-[16px] p-3.5 sm:p-4 flex flex-col justify-between overflow-hidden bg-white border border-[#DDE5DF] text-[#17211B] shadow-sm hover:shadow-md hover:border-[#F28C28] transition-all active:scale-[0.98]"
+          >
+            <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-[#FFF1E2] flex items-center justify-center text-[#F28C28]">
+              <Star className="w-3 h-3 fill-[#F28C28]" />
+            </div>
+            <div className="text-left">
+              <span className="text-xs font-bold block leading-tight text-[#17211B]">Make Money</span>
+              <span className="text-[10px] text-[#66736B]">Be your own boss</span>
+            </div>
+            <div className="my-2.5 flex justify-center">
+              <div className="w-12 h-12 rounded-full bg-[#EAF7EE] flex items-center justify-center text-[#16803C] shadow-inner group-hover:scale-110 transition-transform">
+                <Tag className="w-6 h-6" />
+              </div>
+            </div>
+            <div className="bg-[#F8FAF9] text-[#16803C] border border-[#C5E9CE] text-[9px] sm:text-[10px] font-black uppercase tracking-wider py-1 px-2 rounded-full text-center">
+              WHOLESALE BALES
+            </div>
+          </a>
+
+          {/* 3. Free Delivery */}
+          <div className="group relative rounded-[16px] p-3.5 sm:p-4 flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#F28C28] to-[#FF6F00] text-white shadow-sm hover:shadow-md transition-all">
+            <div className="flex items-center justify-between text-xs font-bold leading-tight">
+              <span>Free Delivery</span>
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
+            </div>
+            <div className="my-3 flex justify-center">
+              <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center text-[#F28C28] shadow-inner group-hover:scale-110 transition-transform">
+                <Truck className="w-6 h-6 stroke-[2.5]" />
+              </div>
+            </div>
+            <div className="bg-white/95 text-[#17211B] text-[9px] sm:text-[10px] font-black uppercase tracking-wider py-1 px-2 rounded-full text-center shadow-sm">
+              FREE DELIVERY
+            </div>
+          </div>
+
+          {/* 4. New Arrival */}
+          <button
+            onClick={() => {
+              setSortBy('newest');
+              const el = document.getElementById('catalog');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="group relative rounded-[16px] p-3.5 sm:p-4 flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#2DD4BF] to-[#0D9488] text-white shadow-sm hover:shadow-md transition-all active:scale-[0.98] text-left"
+          >
+            <div className="flex items-center justify-between text-xs font-bold leading-tight">
+              <span>New Arrival</span>
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
+            </div>
+            <div className="my-3 flex justify-center">
+              <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center text-[#0D9488] shadow-inner group-hover:scale-110 transition-transform">
+                <Package className="w-6 h-6 stroke-[2.5]" />
+              </div>
+            </div>
+            <div className="bg-white/95 text-[#0F5C2E] text-[9px] sm:text-[10px] font-black uppercase tracking-wider py-1 px-2 rounded-full text-center shadow-sm">
+              JUST FOR YOU
+            </div>
+          </button>
+
+          {/* 5. Buy 2 Pay for 1 / Combos */}
+          <button
+            onClick={() => {
+              setClearanceOnly(true);
+              const el = document.getElementById('catalog');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="group relative rounded-[16px] p-3.5 sm:p-4 flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#38BDF8] to-[#2563EB] text-white shadow-sm hover:shadow-md transition-all active:scale-[0.98] text-left"
+          >
+            <div className="flex items-center justify-between text-xs font-bold leading-tight">
+              <span>Buy 2 Pay for 1</span>
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
+            </div>
+            <div className="my-3 flex justify-center">
+              <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center text-[#2563EB] shadow-inner group-hover:scale-110 transition-transform">
+                <ShoppingBag className="w-6 h-6 stroke-[2.5]" />
+              </div>
+            </div>
+            <div className="bg-white/95 text-[#1D4ED8] text-[9px] sm:text-[10px] font-black uppercase tracking-wider py-1 px-2 rounded-full text-center shadow-sm">
+              UP TO -50%
+            </div>
+          </button>
+
+          {/* 6. Banger Deals */}
+          <button
+            onClick={() => {
+              setClearanceOnly(true);
+              const el = document.getElementById('catalog');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="group relative rounded-[16px] p-3.5 sm:p-4 flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#EF4444] to-[#F97316] text-white shadow-sm hover:shadow-md transition-all active:scale-[0.98] text-left"
+          >
+            <div className="flex items-center justify-between text-xs font-bold leading-tight">
+              <span>Banger Deals</span>
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
+            </div>
+            <div className="my-3 flex justify-center">
+              <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center text-[#EF4444] shadow-inner group-hover:scale-110 transition-transform">
+                <Flame className="w-6 h-6 stroke-[2.5]" />
+              </div>
+            </div>
+            <div className="bg-white/95 text-[#DC2626] text-[9px] sm:text-[10px] font-black uppercase tracking-wider py-1 px-2 rounded-full text-center shadow-sm">
+              UP TO -60%
+            </div>
+          </button>
+        </div>
+      </section>
+
+      {/* Flash Sales Banner with Live Ticking Countdown */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 w-full">
+        <div className="bg-white rounded-[16px] border border-[#DDE5DF] overflow-hidden shadow-sm">
+          {/* Header Bar (Red Jumia Flash Sales Style) */}
+          <div className="bg-[#E52E04] text-white px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Zap className="w-5 h-5 fill-white text-white" />
+              <h2 className="text-base sm:text-lg font-black tracking-wide uppercase">
+                Flash Sales
+              </h2>
+            </div>
+
+            {/* Countdown Clock */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-white/90 hidden sm:inline">
+                Time Left:
+              </span>
+              <div className="flex items-center gap-1 font-mono text-xs sm:text-sm font-bold">
+                <span className="bg-black/30 px-2 py-0.5 rounded">
+                  {String(timeLeft.hours).padStart(2, '0')}h
+                </span>
+                <span>:</span>
+                <span className="bg-black/30 px-2 py-0.5 rounded">
+                  {String(timeLeft.minutes).padStart(2, '0')}m
+                </span>
+                <span>:</span>
+                <span className="bg-black/30 px-2 py-0.5 rounded">
+                  {String(timeLeft.seconds).padStart(2, '0')}s
+                </span>
+              </div>
+            </div>
+
+            <a
+              href="#catalog"
+              onClick={() => setClearanceOnly(true)}
+              className="text-xs font-bold uppercase tracking-wider text-white hover:underline flex items-center gap-1"
+            >
+              <span>See All Deals</span>
+              <span>→</span>
+            </a>
+          </div>
+
+          {/* Horizontal Deals Carousel */}
+          <div className="p-4 overflow-x-auto flex gap-4 no-scrollbar">
+            {products.slice(0, 6).map((p) => {
+              const discountPercent = p.status === 'CLEARANCE' ? 50 : 35;
+              const originalPrice = Math.round(p.sellingPrice / (1 - discountPercent / 100));
+
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => setDetailProduct(p)}
+                  className="w-44 sm:w-48 shrink-0 bg-white rounded-[12px] border border-[#F0F4F1] hover:border-[#16803C] hover:shadow-cardHover transition-all p-2.5 cursor-pointer flex flex-col justify-between"
+                >
+                  <div className="relative aspect-square w-full rounded-[10px] overflow-hidden bg-gray-100 mb-2">
+                    <img
+                      src={p.primaryImageUrl || 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=500&q=80'}
+                      alt={p.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-1.5 right-1.5 bg-[#DC2626] text-white text-[10px] font-black px-1.5 py-0.5 rounded">
+                      -{discountPercent}%
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-xs font-semibold text-[#17211B] line-clamp-1">
+                      {p.name}
+                    </h4>
+                    <div className="mt-1 flex items-baseline gap-1.5">
+                      <span className="text-sm font-black text-[#17211B]">
+                        {formatNaira(p.sellingPrice)}
+                      </span>
+                      <span className="text-[10px] text-[#8A968F] line-through">
+                        {formatNaira(originalPrice)}
+                      </span>
+                    </div>
+
+                    {/* Stock Progress Bar */}
+                    <div className="mt-2 space-y-1">
+                      <div className="w-full bg-[#EAEFEA] h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-[#DC2626] h-full rounded-full"
+                          style={{ width: `${Math.min(100, Math.max(25, p.quantity * 15))}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-[#66736B] block">
+                        {p.quantity} items left
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -468,7 +918,7 @@ export default function FrontShopPage() {
                     : 'bg-white text-[#66736B] hover:text-[#17211B] border border-[#DDE5DF]'
                 }`}
               >
-                {cat.name} ({cat.count})
+                {getCategoryIcon(cat.name)} {cat.name} ({cat.count})
               </button>
             ))}
           </div>
@@ -520,6 +970,8 @@ export default function FrontShopPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {products.map((p) => {
               const inCart = cart.find((it) => it.product.id === p.id);
+              const discountPercent = p.status === 'CLEARANCE' ? 50 : 30;
+              const originalPrice = Math.round(p.sellingPrice / (1 - discountPercent / 100));
 
               return (
                 <div
@@ -546,12 +998,10 @@ export default function FrontShopPage() {
                       {p.condition}
                     </div>
 
-                    {/* Clearance Badge */}
-                    {p.status === 'CLEARANCE' && (
-                      <div className="absolute top-2 right-2 bg-[#F28C28] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
-                        CLEARANCE
-                      </div>
-                    )}
+                    {/* Red Discount Badge */}
+                    <div className="absolute top-2 right-2 bg-[#DC2626] text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow">
+                      -{discountPercent}%
+                    </div>
 
                     {/* Quantity Pill */}
                     <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm text-[#17211B] text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
@@ -573,20 +1023,25 @@ export default function FrontShopPage() {
                       </p>
                     </div>
 
-                    {/* Price & Action Row */}
-                    <div className="pt-3 border-t border-[#F0F4F1] flex items-center justify-between gap-1">
+                    {/* Price, Strikethrough & Action Row */}
+                    <div className="pt-2 border-t border-[#F0F4F1] flex items-end justify-between gap-1">
                       <div>
-                        <span className="text-[10px] text-[#66736B] block leading-none">
-                          Price
-                        </span>
-                        <span className="text-sm sm:text-base font-extrabold text-[#16803C]">
-                          {formatNaira(p.sellingPrice)}
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-sm sm:text-base font-extrabold text-[#16803C]">
+                            {formatNaira(p.sellingPrice)}
+                          </span>
+                          <span className="text-[10px] text-[#8A968F] line-through">
+                            {formatNaira(originalPrice)}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-[#D96F0B] font-bold block mt-0.5">
+                          Authentic Grade A
                         </span>
                       </div>
 
                       <button
                         onClick={(e) => addToCart(p, e)}
-                        className={`p-2 rounded-full transition-all ${
+                        className={`p-2 rounded-full transition-all shrink-0 ${
                           inCart
                             ? 'bg-[#16803C] text-white'
                             : 'bg-[#EAF7EE] text-[#16803C] hover:bg-[#16803C] hover:text-white'
