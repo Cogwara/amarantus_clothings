@@ -608,16 +608,15 @@ export default function FrontShopPage() {
       <Modal
         isOpen={Boolean(detailProduct)}
         onClose={() => setDetailProduct(null)}
-        title={detailProduct?.name || 'Item Details'}
-        description={`Size: ${detailProduct?.size} • Grade: ${detailProduct?.condition}`}
-        maxWidth="lg"
+        maxWidth="2xl"
+        hideHeader={true}
       >
         {detailProduct && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {/* Product Photo Gallery */}
-              <div className="space-y-2">
-                <div className="aspect-square w-full rounded-[12px] bg-gray-100 overflow-hidden border border-[#DDE5DF]">
+          <div className="relative pt-1 sm:pt-2">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+              {/* Left Column: Product Photo & Badges */}
+              <div className="md:col-span-5 space-y-3">
+                <div className="relative aspect-square w-full rounded-[14px] bg-[#F8FAF9] overflow-hidden border border-[#DDE5DF] shadow-sm">
                   {detailProduct.primaryImageUrl ? (
                     <img
                       src={detailProduct.primaryImageUrl}
@@ -625,73 +624,119 @@ export default function FrontShopPage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center font-bold text-gray-300">
-                      CS
+                    <div className="w-full h-full flex flex-col items-center justify-center font-bold text-gray-300">
+                      <ShoppingBag className="w-12 h-12 stroke-1 text-gray-300" />
+                      <span className="text-xs text-[#8A968F] mt-2 font-medium">ClothShop Thrift</span>
                     </div>
                   )}
+
+                  {/* Condition Pill Overlaid */}
+                  <div className="absolute top-2.5 left-2.5 bg-black/75 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow">
+                    <Sparkles className="w-3.5 h-3.5 text-[#F28C28]" />
+                    <span>Grade: {detailProduct.condition}</span>
+                  </div>
+
+                  {/* Clearance Tag if clearance */}
+                  {detailProduct.status === 'CLEARANCE' && (
+                    <div className="absolute top-2.5 right-2.5 bg-[#DC2626] text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow">
+                      CLEARANCE SALE
+                    </div>
+                  )}
+                </div>
+
+                {/* Quality & Sanitation Badge */}
+                <div className="p-3 bg-[#EAF7EE]/70 rounded-[12px] border border-[#C5E9CE] space-y-1.5 text-[11px] text-[#0F5C2E]">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <ShieldCheck className="w-4 h-4 text-[#16803C] shrink-0" />
+                    <span>Steam-pressed, clean & ready to wear</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[#66736B]">
+                    <Truck className="w-4 h-4 text-[#16803C] shrink-0" />
+                    <span>Available in Katangua shop & online</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Product Specifications & Pricing */}
-              <div className="space-y-4 flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-[#66736B]">
-                      {detailProduct.categoryName} • SKU: {detailProduct.sku}
+              {/* Right Column: Specs, Price, and Purchase Buttons */}
+              <div className="md:col-span-7 flex flex-col justify-between space-y-4">
+                {/* Category & Title */}
+                <div className="space-y-1 pr-10">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-[#EAF7EE] text-[#16803C] border border-[#C5E9CE]">
+                      {detailProduct.categoryName}
                     </span>
-                    <h2 className="text-xl font-bold text-[#17211B] mt-0.5">
-                      {detailProduct.name}
-                    </h2>
-                  </div>
-
-                  <div className="p-3 bg-[#F8FAF9] rounded-[10px] border border-[#DDE5DF] space-y-1.5 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-[#66736B]">Size:</span>
-                      <strong className="text-[#17211B]">{detailProduct.size}</strong>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#66736B]">Condition:</span>
-                      <Badge variant="green" className="text-[10px]">
-                        {detailProduct.condition}
-                      </Badge>
-                    </div>
+                    <span className="text-[11px] text-[#66736B] font-medium">
+                      SKU: <strong className="text-[#17211B]">{detailProduct.sku}</strong>
+                    </span>
                     {detailProduct.brand && (
-                      <div className="flex justify-between">
-                        <span className="text-[#66736B]">Brand:</span>
-                        <strong className="text-[#17211B]">{detailProduct.brand}</strong>
-                      </div>
+                      <span className="text-[11px] text-[#66736B] font-medium">
+                        • Brand: <strong className="text-[#17211B]">{detailProduct.brand}</strong>
+                      </span>
                     )}
-                    {detailProduct.color && (
-                      <div className="flex justify-between">
-                        <span className="text-[#66736B]">Color:</span>
-                        <strong className="text-[#17211B]">{detailProduct.color}</strong>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-[#66736B]">Availability:</span>
-                      <strong className="text-[#16803C]">
-                        {detailProduct.quantity} piece(s) in store
-                      </strong>
+                  </div>
+
+                  <h2 className="text-xl sm:text-2xl font-black text-[#17211B] leading-tight pt-1">
+                    {detailProduct.name}
+                  </h2>
+                </div>
+
+                {/* Price & Stock Display Card */}
+                <div className="p-3.5 bg-[#F8FAF9] rounded-[12px] border border-[#DDE5DF] flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#66736B] block">
+                      Price
+                    </span>
+                    <div className="text-2xl sm:text-3xl font-black text-[#16803C] leading-none mt-1">
+                      {formatNaira(detailProduct.sellingPrice)}
                     </div>
                   </div>
 
-                  {detailProduct.description && (
-                    <p className="text-xs text-[#66736B] leading-relaxed">
-                      {detailProduct.description}
-                    </p>
+                  <div className="text-right">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#66736B] block">
+                      Availability
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 mt-1 text-xs font-bold text-[#16803C]">
+                      <span className="w-2 h-2 rounded-full bg-[#16803C] animate-pulse" />
+                      {detailProduct.quantity === 1 ? '1 piece only' : `${detailProduct.quantity} in store`}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Specifications Grid */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2.5 rounded-[10px] bg-white border border-[#DDE5DF]">
+                    <span className="text-[#66736B] block text-[11px]">Size / Fit</span>
+                    <span className="font-bold text-[#17211B] text-sm mt-0.5 block">{detailProduct.size}</span>
+                  </div>
+                  <div className="p-2.5 rounded-[10px] bg-white border border-[#DDE5DF]">
+                    <span className="text-[#66736B] block text-[11px]">Condition</span>
+                    <span className="font-bold text-[#16803C] text-sm mt-0.5 block">{detailProduct.condition}</span>
+                  </div>
+                  {detailProduct.color && (
+                    <div className="p-2.5 rounded-[10px] bg-white border border-[#DDE5DF]">
+                      <span className="text-[#66736B] block text-[11px]">Color / Shade</span>
+                      <span className="font-bold text-[#17211B] text-sm mt-0.5 block">{detailProduct.color}</span>
+                    </div>
+                  )}
+                  {detailProduct.gender && (
+                    <div className="p-2.5 rounded-[10px] bg-white border border-[#DDE5DF]">
+                      <span className="text-[#66736B] block text-[11px]">Section</span>
+                      <span className="font-bold text-[#17211B] text-sm mt-0.5 block">{detailProduct.gender}</span>
+                    </div>
                   )}
                 </div>
 
-                {/* Price & Action Buttons */}
-                <div className="space-y-3 pt-3 border-t border-[#F0F4F1]">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-xs text-[#66736B]">Special Price:</span>
-                    <span className="text-2xl font-black text-[#16803C]">
-                      {formatNaira(detailProduct.sellingPrice)}
-                    </span>
+                {/* Description */}
+                {detailProduct.description && (
+                  <div className="text-xs text-[#66736B] leading-relaxed bg-[#F8FAF9] p-3 rounded-[10px] border border-[#EBEFEA]">
+                    <p className="line-clamp-3">{detailProduct.description}</p>
                   </div>
+                )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {/* Call-to-Action Buttons */}
+                <div className="space-y-2.5 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {/* Add to Bag */}
                     <Button
                       variant="primary"
                       size="md"
@@ -699,28 +744,37 @@ export default function FrontShopPage() {
                         addToCart(detailProduct);
                         setDetailProduct(null);
                       }}
-                      className="font-bold gap-2"
+                      className="w-full font-bold shadow-sm"
                     >
-                      <ShoppingBag className="w-4 h-4" />
-                      <span>Buy Direct / Bag</span>
+                      <ShoppingBag className="w-4 h-4 shrink-0" />
+                      <span className="whitespace-nowrap">
+                        {cart.find((it) => it.product.id === detailProduct.id)
+                          ? 'In Bag (Add More)'
+                          : 'Add to Bag'}
+                      </span>
                     </Button>
 
+                    {/* WhatsApp */}
                     <a
                       href={getWhatsAppOrderLink(detailProduct)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full"
+                      className="w-full block"
                     >
                       <Button
                         variant="secondary"
                         size="md"
-                        className="w-full font-bold gap-2"
+                        className="w-full font-bold shadow-sm"
                       >
-                        <MessageCircle className="w-4 h-4" />
-                        <span>Order on WhatsApp</span>
+                        <MessageCircle className="w-4 h-4 shrink-0" />
+                        <span className="whitespace-nowrap">Order on WhatsApp</span>
                       </Button>
                     </a>
                   </div>
+
+                  <p className="text-[11px] text-center text-[#8A968F] font-medium">
+                    ⚡ Fast Lagos Delivery & Nationwide Waybill
+                  </p>
                 </div>
               </div>
             </div>
