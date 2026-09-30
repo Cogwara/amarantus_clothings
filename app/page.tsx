@@ -514,132 +514,203 @@ export default function FrontShopPage() {
           </div>
         </div>
 
-        {/* Sub-Navigation Ribbon (Under Search Bar) */}
-        <div className="bg-[#FAFBFB] border-t border-[#EAEFEA] overflow-x-auto no-scrollbar">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-6 py-2 text-xs font-medium text-[#17211B] whitespace-nowrap">
-            <button
-              onClick={() => {
-                setSelectedCategory('');
-                setClearanceOnly(false);
-              }}
-              className={`flex items-center gap-1.5 hover:text-[#16803C] transition-colors ${
-                selectedCategory === '' && !clearanceOnly ? 'text-[#16803C] font-bold' : 'text-[#66736B]'
-              }`}
-            >
-              <span>🏛️</span>
-              <span>All Thrift</span>
-            </button>
-
-            <button
-              onClick={() => setClearanceOnly(true)}
-              className={`flex items-center gap-1.5 transition-colors ${
-                clearanceOnly ? 'text-[#DC2626] font-extrabold' : 'text-[#DC2626] font-bold hover:text-red-700'
-              }`}
-            >
-              <span>🔥</span>
-              <span>Clearance Deals</span>
-            </button>
-
-            {categories.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => {
-                  setSelectedCategory(c.id);
-                  setClearanceOnly(false);
-                }}
-                className={`flex items-center gap-1.5 hover:text-[#16803C] transition-colors ${
-                  selectedCategory === c.id && !clearanceOnly ? 'text-[#16803C] font-bold' : 'text-[#66736B]'
-                }`}
-              >
-                <span>{getCategoryIcon(c.name)}</span>
-                <span>{c.name}</span>
-              </button>
-            ))}
-
-            <a
-              href="#contact"
-              className="flex items-center gap-1.5 text-[#16803C] hover:underline font-semibold"
-            >
-              <span>🚚</span>
-              <span>Thursday Market Drop</span>
-            </a>
-          </div>
-        </div>
       </header>
 
-      {/* Hero Promotional Banner Section */}
+      {/* Hero & Side Category Section (Jumia Style) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 w-full">
-        <div className="relative rounded-[16px] overflow-hidden bg-gradient-to-r from-[#07381C] via-[#0D5C2E] to-[#0A4723] text-white shadow-xl min-h-[320px] sm:min-h-[380px] flex items-center border border-[#16803C]">
-          {/* Subtle Background Pattern Accent */}
-          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]" />
-
-          <div className="relative z-10 w-full p-6 sm:p-10 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
-            {/* Left Content */}
-            <div className="max-w-xl space-y-4 text-center md:text-left">
-              {/* Tagline */}
-              <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-black tracking-wider uppercase text-white/90">
-                <span className="text-[#F28C28] text-base">★</span>
-                <span>• NAIJA WE DEY FOR YOU •</span>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
+          {/* Left Side Category Menu (Desktop) */}
+          <aside className="hidden lg:flex lg:col-span-3 bg-white rounded-[16px] border border-[#DDE5DF] shadow-sm p-3.5 flex-col justify-between overflow-hidden">
+            <div>
+              <div className="px-2 pb-2.5 mb-1.5 border-b border-[#F0F4F1] flex items-center justify-between">
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#17211B] flex items-center gap-1.5">
+                  <Filter className="w-3.5 h-3.5 text-[#16803C]" />
+                  <span>Categories</span>
+                </span>
+                <span className="text-[10px] text-[#16803C] bg-[#EAF7EE] font-bold px-2 py-0.5 rounded-full">
+                  Thrift Grade A
+                </span>
               </div>
 
-              {/* Giant Headline */}
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08] text-white">
-                Celebrate Nigeria <br />
-                <span className="text-[#FFDC73]">Celebrate Savings</span>
-              </h1>
-
-              {/* Up to 40% Off Pill */}
-              <div className="pt-1">
-                <div className="inline-flex items-center gap-2.5 px-4 sm:px-5 py-2 rounded-full bg-white text-[#17211B] shadow-lg">
-                  <span className="text-sm sm:text-base font-black text-[#16803C]">
-                    Up to <span className="text-lg sm:text-xl font-extrabold text-[#17211B]">40% off</span>
-                  </span>
-                  <span className="text-xs text-[#66736B] font-medium">• UK Grade A Thrift</span>
-                </div>
-              </div>
-
-              {/* Shop Now CTA */}
-              <div className="pt-2">
-                <a
-                  href="#catalog"
-                  className="inline-flex items-center gap-2 text-base font-bold text-white hover:text-[#FFDC73] transition-colors group"
+              <div className="space-y-0.5">
+                <button
+                  onClick={() => {
+                    setSelectedCategory('');
+                    setClearanceOnly(false);
+                    const el = document.getElementById('catalog');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-[10px] text-xs font-semibold transition-all ${
+                    selectedCategory === '' && !clearanceOnly
+                      ? 'bg-[#16803C] text-white shadow-sm'
+                      : 'text-[#17211B] hover:bg-[#F8FAF9] hover:text-[#16803C]'
+                  }`}
                 >
-                  <span className="underline underline-offset-4 decoration-2">Shop Now</span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
-                </a>
+                  <div className="flex items-center gap-2.5">
+                    <span>🏛️</span>
+                    <span>All Collections</span>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+                </button>
+
+                {categories.map((c) => {
+                  const isSelected = selectedCategory === c.id && !clearanceOnly;
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => {
+                        setSelectedCategory(c.id);
+                        setClearanceOnly(false);
+                        const el = document.getElementById('catalog');
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-[10px] text-xs font-medium transition-all ${
+                        isSelected
+                          ? 'bg-[#16803C] text-white font-bold shadow-sm'
+                          : 'text-[#55635B] hover:bg-[#F8FAF9] hover:text-[#17211B]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-sm">{getCategoryIcon(c.name)}</span>
+                        <span>{c.name}</span>
+                      </div>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                          isSelected ? 'bg-white/20 text-white' : 'text-[#8A968F] bg-[#F8FAF9]'
+                        }`}
+                      >
+                        {c.count}
+                      </span>
+                    </button>
+                  );
+                })}
+
+                <button
+                  onClick={() => {
+                    setClearanceOnly(true);
+                    const el = document.getElementById('catalog');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-[10px] text-xs font-bold transition-all ${
+                    clearanceOnly
+                      ? 'bg-[#DC2626] text-white shadow-sm'
+                      : 'text-[#DC2626] hover:bg-red-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span>🔥</span>
+                    <span>Clearance Deals</span>
+                  </div>
+                  <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-[#FFF1E2] text-[#D96F0B]">
+                    -50%
+                  </span>
+                </button>
               </div>
             </div>
 
-            {/* Right Fashion Montage Graphic */}
-            <div className="relative w-full md:w-1/2 flex justify-center items-center">
-              <div className="relative w-72 sm:w-96 aspect-[4/3] rounded-[16px] overflow-hidden shadow-2xl border-4 border-white/20 group">
-                <img
-                  src="https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80"
-                  alt="Celebrate Nigeria Thrift Fashion"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4 text-white">
-                  <span className="text-[11px] font-bold text-[#F28C28] uppercase tracking-wider">
-                    Direct From Katangua & Balogun
-                  </span>
-                  <p className="text-xs sm:text-sm font-bold text-white">
-                    Grade A Handpicked Okrika Drops Every Thursday
-                  </p>
+            {/* Quick Footer Links inside Sidebar */}
+            <div className="pt-3 border-t border-[#F0F4F1] space-y-1.5 text-[11px]">
+              <a
+                href="#contact"
+                className="flex items-center justify-between px-3 py-1.5 rounded-[8px] text-[#16803C] hover:bg-[#EAF7EE] font-bold transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Truck className="w-3.5 h-3.5" />
+                  <span>Thursday Drops</span>
+                </div>
+                <span className="text-[10px] bg-[#EAF7EE] text-[#16803C] px-1 rounded">Fresh</span>
+              </a>
+
+              <a
+                href={`https://wa.me/${shop.phone.replace(/\D/g, '')}?text=Hello%20${encodeURIComponent(
+                  shop.name
+                )},%20I%20want%20to%20buy%20wholesale%20bales.`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between px-3 py-1.5 rounded-[8px] text-[#D96F0B] hover:bg-[#FFF1E2] font-bold transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Star className="w-3.5 h-3.5 fill-[#F28C28]" />
+                  <span>Wholesale Bales</span>
+                </div>
+                <span className="text-[10px]">Katangua</span>
+              </a>
+            </div>
+          </aside>
+
+          {/* Hero Promotional Banner (lg:col-span-9) */}
+          <div className="lg:col-span-9 relative rounded-[16px] overflow-hidden bg-gradient-to-r from-[#07381C] via-[#0D5C2E] to-[#0A4723] text-white shadow-xl min-h-[340px] sm:min-h-[380px] flex items-center border border-[#16803C]">
+            {/* Subtle Background Pattern Accent */}
+            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]" />
+
+            <div className="relative z-10 w-full p-6 sm:p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6">
+              {/* Left Content */}
+              <div className="max-w-md space-y-4 text-center md:text-left">
+                {/* Tagline */}
+                <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-black tracking-wider uppercase text-white/90">
+                  <span className="text-[#F28C28] text-base">★</span>
+                  <span>• NAIJA WE DEY FOR YOU •</span>
+                </div>
+
+                {/* Giant Headline */}
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] text-white">
+                  Celebrate Nigeria <br />
+                  <span className="text-[#FFDC73]">Celebrate Savings</span>
+                </h1>
+
+                {/* Up to 40% Off Pill */}
+                <div className="pt-1">
+                  <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white text-[#17211B] shadow-lg">
+                    <span className="text-sm font-black text-[#16803C]">
+                      Up to <span className="text-base font-extrabold text-[#17211B]">40% off</span>
+                    </span>
+                    <span className="text-xs text-[#66736B] font-medium">• UK Grade A Thrift</span>
+                  </div>
+                </div>
+
+                {/* Shop Now CTA */}
+                <div className="pt-2">
+                  <a
+                    href="#catalog"
+                    className="inline-flex items-center gap-2 text-base font-bold text-white hover:text-[#FFDC73] transition-colors group"
+                  >
+                    <span className="underline underline-offset-4 decoration-2">Shop Now</span>
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Right Fashion Montage Graphic */}
+              <div className="relative w-full md:w-1/2 flex justify-center items-center">
+                <div className="relative w-64 sm:w-80 aspect-[4/3] rounded-[16px] overflow-hidden shadow-2xl border-4 border-white/20 group">
+                  <img
+                    src="https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80"
+                    alt="Celebrate Nigeria Thrift Fashion"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4 text-white">
+                    <span className="text-[10px] font-bold text-[#F28C28] uppercase tracking-wider">
+                      Direct From Katangua & Balogun
+                    </span>
+                    <p className="text-xs font-bold text-white leading-snug">
+                      Grade A Handpicked Okrika Drops Every Thursday
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Slide Indicator Dots (Just like Jumia banner bottom) */}
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full">
-            {[0, 1, 2, 3, 4, 5].map((idx) => (
-              <span
-                key={idx}
-                className={`h-1.5 rounded-full transition-all ${
-                  idx === heroSlide ? 'w-5 bg-white' : 'w-1.5 bg-white/40'
-                }`}
-              />
-            ))}
+            {/* Slide Indicator Dots (Just like Jumia banner bottom) */}
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full">
+              {[0, 1, 2, 3, 4, 5].map((idx) => (
+                <span
+                  key={idx}
+                  className={`h-1.5 rounded-full transition-all ${
+                    idx === heroSlide ? 'w-5 bg-white' : 'w-1.5 bg-white/40'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
