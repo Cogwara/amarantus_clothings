@@ -1,0 +1,395 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  OWNER
+  MANAGER
+  STAFF
+}
+
+enum ProductStatus {
+  AVAILABLE
+  LOW_STOCK
+  OUT_OF_STOCK
+  SOLD_OUT
+  CLEARANCE
+  INACTIVE
+}
+
+enum Condition {
+  EXCELLENT
+  VERY_GOOD
+  GOOD
+  FAIR
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  POS
+  OTHER
+}
+
+enum ExpenseCategory {
+  TRANSPORT
+  RENT
+  ELECTRICITY
+  PACKAGING
+  STAFF
+  MARKETING
+  MARKET_EXPENSE
+  OTHER
+}
+
+enum MovementType {
+  PURCHASE
+  SALE
+  RETURN
+  DAMAGE
+  ADJUSTMENT
+  CLEARANCE
+}
+
+enum PlanStatus {
+  DRAFT
+  READY
+  COMPLETED
+}
+
+enum SocialPlatform {
+  WHATSAPP
+  INSTAGRAM
+}
+
+enum SocialPostStatus {
+  DRAFT
+  READY
+  POSTED
+}
+
+model User {
+  id           String          @id @default(cuid())
+  name         String
+  email        String          @unique
+  phone        String?
+  passwordHash String
+  role         Role            @default(STAFF)
+  isActive     Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  batches      PurchaseBatch[]
+  sales        Sale[]
+  expenses     Expense[]
+  movements    StockMovement[]
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+model Shop {
+  id        String   @id @default(cuid())
+  name      String   @default("Elegance Thrift Haven")
+  phone     String   @default("+234 803 123 4567")
+  address   String   @default("Shop 14, Katangua Main Complex, Super, Lagos, Nigeria")
+  logo      String?
+  currency  String   @default("NGN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("shops")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products    Product[]
+  planItems   PurchasingPlanItem[]
+
+  @@map("categories")
+}
+
+model Product {
+  id           String        @id @default(cuid())
+  sku          String        @unique
+  name         String
+  categoryId   String
+  description  String?
+  size         String        @default("M")
+  gender       String        @default("UNISEX")
+  condition    Condition     @default(EXCELLENT)
+  brand        String?
+  color        String?
+  costPrice    Float         @default(0)
+  sellingPrice Float         @default(0)
+  quantity     Int           @default(0)
+  minimumStock Int           @default(3)
+  status       ProductStatus @default(AVAILABLE)
+  dateAdded    DateTime      @default(now())
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  category     Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  images       ProductImage[]
+  purchaseItems PurchaseItem[]
+  saleItems    SaleItem[]
+  movements    StockMovement[]
+  discounts    Discount[]
+  socialPosts  SocialPost[]
+
+  @@index([categoryId])
+  @@index([status])
+  @@index([dateAdded])
+  @@map("products")
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  url       String
+  publicId  String?
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+model Supplier {
+  id        String          @id @default(cuid())
+  name      String
+  phone     String?
+  market    String          @default("Katangua Market")
+  notes     String?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  batches   PurchaseBatch[]
+
+  @@map("suppliers")
+}
+
+model PurchaseBatch {
+  id             String         @id @default(cuid())
+  batchNumber    String         @unique
+  supplierId     String?
+  purchaseDate   DateTime       @default(now())
+  purchaseAmount Float          @default(0)
+  transportCost  Float          @default(0)
+  otherCosts     Float          @default(0)
+  totalCost      Float          @default(0)
+  notes          String?
+  createdById    String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  supplier       Supplier?      @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  createdBy      User           @relation(fields: [createdById], references: [id])
+  items          PurchaseItem[]
+
+  @@index([supplierId])
+  @@index([createdById])
+  @@index([purchaseDate])
+  @@map("purchase_batches")
+}
+
+model PurchaseItem {
+  id              String        @id @default(cuid())
+  purchaseBatchId String
+  productId       String
+  quantity        Int
+  unitCost        Float
+  totalCost       Float
+
+  purchaseBatch   PurchaseBatch @relation(fields: [purchaseBatchId], references: [id], onDelete: Cascade)
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([purchaseBatchId])
+  @@index([productId])
+  @@map("purchase_items")
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales     Sale[]
+
+  @@index([phone])
+  @@map("customers")
+}
+
+model Sale {
+  id            String        @id @default(cuid())
+  saleNumber    String        @unique
+  customerId    String?
+  subtotal      Float         @default(0)
+  discount      Float         @default(0)
+  totalAmount   Float         @default(0)
+  paymentMethod PaymentMethod @default(CASH)
+  saleDate      DateTime      @default(now())
+  soldById      String
+  notes         String?
+  createdAt     DateTime      @default(now())
+
+  customer      Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  soldBy        User          @relation(fields: [soldById], references: [id])
+  items         SaleItem[]
+
+  @@index([customerId])
+  @@index([soldById])
+  @@index([saleDate])
+  @@map("sales")
+}
+
+model SaleItem {
+  id               String   @id @default(cuid())
+  saleId           String
+  productId        String
+  quantity         Int
+  unitSellingPrice Float
+  unitCostPrice    Float
+  discount         Float    @default(0)
+  totalAmount      Float
+  profit           Float
+
+  sale             Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([saleId])
+  @@index([productId])
+  @@map("sale_items")
+}
+
+model Expense {
+  id          String          @id @default(cuid())
+  category    ExpenseCategory @default(OTHER)
+  description String
+  amount      Float
+  expenseDate DateTime        @default(now())
+  createdById String
+  createdAt   DateTime        @default(now())
+
+  createdBy   User            @relation(fields: [createdById], references: [id])
+
+  @@index([category])
+  @@index([expenseDate])
+  @@index([createdById])
+  @@map("expenses")
+}
+
+model Discount {
+  id            String    @id @default(cuid())
+  productId     String
+  discountType  String    @default("PERCENTAGE")
+  discountValue Float
+  startDate     DateTime  @default(now())
+  endDate       DateTime?
+  isActive      Boolean   @default(true)
+
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("discounts")
+}
+
+model StockMovement {
+  id          String       @id @default(cuid())
+  productId   String
+  type        MovementType
+  quantity    Int
+  referenceId String?
+  notes       String?
+  createdById String?
+  createdAt   DateTime     @default(now())
+
+  product     Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdBy   User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([productId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("stock_movements")
+}
+
+model PurchasingPlan {
+  id        String               @id @default(cuid())
+  planDate  DateTime             @default(now())
+  status    PlanStatus           @default(DRAFT)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  items     PurchasingPlanItem[]
+
+  @@map("purchasing_plans")
+}
+
+model PurchasingPlanItem {
+  id                      String         @id @default(cuid())
+  planId                  String
+  categoryId              String
+  currentStock            Int            @default(0)
+  averageWeeklySales      Float          @default(0)
+  recommendedQuantity     Int            @default(0)
+  actualQuantityPurchased Int            @default(0)
+  notes                   String?
+
+  plan                    PurchasingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  category                Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([planId])
+  @@index([categoryId])
+  @@map("purchasing_plan_items")
+}
+
+model SocialPost {
+  id        String           @id @default(cuid())
+  productId String
+  platform  SocialPlatform   @default(WHATSAPP)
+  caption   String           @db.Text
+  imageUrl  String?
+  status    SocialPostStatus @default(DRAFT)
+  createdAt DateTime         @default(now())
+
+  product   Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([platform])
+  @@map("social_posts")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  action      String
+  entity      String
+  entityId    String?
+  description String   @db.Text
+  createdAt   DateTime @default(now())
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

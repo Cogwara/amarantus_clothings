@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-green: #16803C;
+  --color-dark-green: #0F5C2E;
+  --color-light-green: #EAF7EE;
+  --color-orange: #F28C28;
+  --color-dark-orange: #D96F0B;
+  --color-light-orange: #FFF1E2;
+  --color-white: #FFFFFF;
+  --color-off-white: #F8FAF9;
+  --color-dark-text: #17211B;
+  --color-muted-text: #66736B;
+  --color-border: #DDE5DF;
+  --color-danger: #DC2626;
+  --color-success: #16803C;
+  --color-warning: #F28C28;
+}
+
+/* Light African Retail Business Theme */
+html,
+body {
+  background-color: #F8FAF9;
+  color: #17211B;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F8FAF9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #DDE5DF;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #B6C4B8;
+}
+
+/* Print styling for POS receipts */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-receipt, #printable-receipt * {
+    visibility: visible;
+  }
+  #printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    margin: 0 auto;
+    padding: 10px;
+    font-size: 12px;
+    color: black;
+    background: white;
+  }
+}
