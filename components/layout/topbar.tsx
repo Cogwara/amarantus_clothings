@@ -115,6 +115,19 @@ export function Topbar({
           <span>🇳🇬 NGN (₦)</span>
         </div>
 
+        {/* View Front Shop */}
+        <Link
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-[10px] bg-[#FFF1E2] border border-[#FCD9B6] text-xs font-semibold text-[#D96F0B] hover:bg-[#FFE6CC] transition-colors"
+          title="Open Public Customer Storefront in new tab"
+        >
+          <ShoppingBag className="w-3.5 h-3.5" />
+          <span>Front Shop</span>
+          <ExternalLink className="w-3 h-3 opacity-70" />
+        </Link>
+
         {/* Notification Bell */}
         <div className="relative">
           <button
