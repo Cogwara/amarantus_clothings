@@ -183,7 +183,7 @@ export async function GET() {
         b."totalCost",
         b.notes,
         COALESCE(sup.name, 'Independent Market Seller') as "supplierName",
-        COALESCE(sup.market, 'Katangua Market') as market,
+        COALESCE(sup.market, 'Amarantus Clothings') as market,
         u.name as "createdByName",
         (SELECT COUNT(*) FROM purchase_items WHERE "purchaseBatchId" = b.id)::int as "itemCount"
       FROM purchase_batches b

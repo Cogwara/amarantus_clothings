@@ -1,7 +1,7 @@
 // test-front-shop.js
 const http = require('http');
 
-const BASE_URL = 'http://localhost:3005';
+const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3001';
 
 async function request(path, options = {}) {
   const url = new URL(path, BASE_URL);
@@ -46,7 +46,7 @@ async function run() {
     // 1. Check Storefront Page
     const pageRes = await request('/');
     assert(pageRes.status === 200, 'GET / returns 200 OK');
-    assert(pageRes.text.includes('Elegance Thrift Haven') || pageRes.text.includes('ClothShop'), 'GET / HTML contains Storefront brand');
+    assert(pageRes.text.includes('Amarantus Clothings'), 'GET / HTML contains Storefront brand');
 
     // 2. Check Public Products API
     const productsRes = await request('/api/public/products');
@@ -78,7 +78,7 @@ async function run() {
       body: {
         customerName: 'Chiamaka Nnamani',
         customerPhone: '08123456789',
-        customerAddress: '14 Admiralty Way, Lekki Phase 1, Lagos',
+        customerAddress: '14 Admiralty Way, Kubwa, FCT',
         paymentMethod: 'TRANSFER',
         items: [
           {

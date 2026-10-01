@@ -2494,7 +2494,7 @@ type ContractBase = Omit<
                     readonly kind: 'literal';
                     readonly value: DefaultLiteralValue<
                       'pg/text@1',
-                      'Shop 14, Katangua Main Complex, Super, Lagos, Nigeria'
+                      'Plot 78 Gbazango Kubwa FCT, Nigeria'
                     >;
                   };
                 };
@@ -2745,7 +2745,7 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly default: {
                     readonly kind: 'literal';
-                    readonly value: DefaultLiteralValue<'pg/text@1', 'Katangua Market'>;
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'Amarantus Clothings'>;
                   };
                 };
                 readonly name: {

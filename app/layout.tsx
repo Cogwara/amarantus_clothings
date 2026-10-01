@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'ClothShop Manager | Used Clothing Retail Management',
+  title: 'Amarantus Clothings Manager | Used Clothing Retail Management',
   description:
     'Complete retail clothing business platform for thrift shops: inventory, point-of-sale, purchasing, expenses, customers, profitability and Thursday market planning.',
   icons: {

@@ -1,5 +1,5 @@
 /**
- * ClothShop Manager - Business Logic & Calculations
+ * Amarantus Clothings Manager - Business Logic & Calculations
  * Explicit formulas for Nigerian Retail Thrift Shop
  */
 
@@ -149,7 +149,7 @@ export function generateSocialCaptions(params: {
     `⭐ *Condition:* ${conditionLabel}\n` +
     `💰 *Price:* ${formattedPrice}\n\n` +
     `📍 *Shop Location:* ${params.shopAddress}\n` +
-    `🚚 Fast delivery available across Lagos & nationwide!\n\n` +
+    `🚚 Fast delivery available across FCT & nationwide!\n\n` +
     `📲 *To order or claim:* Reply to this status or WhatsApp ${params.shopPhone}\n` +
     `⚡ Only 1 piece available! Fastest finger wins.`;
 
@@ -165,7 +165,7 @@ export function generateSocialCaptions(params: {
     `HOW TO ORDER:\n` +
     `1. Send a DM with screenshot\n` +
     `2. Or WhatsApp us via link in bio (${params.shopPhone})\n\n` +
-    `#lagosthrift #thriftlagos #okrikaonline #katanguamarket #yabathrift #nigerianfashion #sustainablefashionng #${params.category.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+    `#fctthrift #thriftfct #okrikaonline #amarantusclothings #abujathrift #nigerianfashion #sustainablefashionng #${params.category.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
 
   return {
     whatsapp: whatsappCaption,

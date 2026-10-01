@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { pool } from '../lib/db';
 
 async function seed() {
-  console.log('🌱 Starting ClothShop Manager database seed...');
+  console.log('🌱 Starting Amarantus Clothings Manager database seed...');
 
   const client = await pool.connect();
   try {
@@ -36,28 +36,30 @@ async function seed() {
       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
     `, [
       'shop_01',
-      'Elegance Thrift Haven',
-      '+234 803 123 4567',
-      'Shop 14, Block B, Katangua Main Complex, Super B/Stop, Lagos, Nigeria',
+      'Amarantus Clothings',
+      '+234 9065043549',
+      'Plot 78 Gbazango Kubwa FCT, Nigeria',
       null,
       'NGN',
     ]);
 
-    // 2. Demo Users (password: password123)
+    // 2. Demo Users
     console.log('Creating Users...');
-    const passwordHash = await bcrypt.hash('password123', 10);
+    const ownerHash = await bcrypt.hash('Amarantus@123', 10);
+    const defaultHash = await bcrypt.hash('password123', 10);
 
     const users = [
-      { id: 'usr_owner', name: 'Amaka Okafor', email: 'owner@clothshop.ng', phone: '+234 803 111 2233', role: 'OWNER' },
-      { id: 'usr_manager', name: 'Chidi Nnamdi', email: 'manager@clothshop.ng', phone: '+234 802 333 4455', role: 'MANAGER' },
-      { id: 'usr_staff', name: 'Blessing Adeyemi', email: 'staff@clothshop.ng', phone: '+234 805 777 8899', role: 'STAFF' },
+      { id: 'usr_amarantus', name: 'Amarantus Clothings', email: 'amarantus@gmail.com', phone: '+234 9065043549', role: 'OWNER', passwordHash: ownerHash },
+      { id: 'usr_owner', name: 'Amaka Okafor', email: 'owner@clothshop.ng', phone: '+234 803 111 2233', role: 'OWNER', passwordHash: defaultHash },
+      { id: 'usr_manager', name: 'Chidi Nnamdi', email: 'manager@clothshop.ng', phone: '+234 802 333 4455', role: 'MANAGER', passwordHash: defaultHash },
+      { id: 'usr_staff', name: 'Blessing Adeyemi', email: 'staff@clothshop.ng', phone: '+234 805 777 8899', role: 'STAFF', passwordHash: defaultHash },
     ];
 
     for (const u of users) {
       await client.query(`
         INSERT INTO users (id, name, email, phone, "passwordHash", role, "isActive", "createdAt", "updatedAt")
         VALUES ($1, $2, $3, $4, $5, $6, true, NOW(), NOW())
-      `, [u.id, u.name, u.email, u.phone, passwordHash, u.role]);
+      `, [u.id, u.name, u.email, u.phone, u.passwordHash, u.role]);
     }
 
     // 3. Categories
@@ -87,7 +89,7 @@ async function seed() {
     // 4. Suppliers
     console.log('Creating Suppliers...');
     const suppliers = [
-      { id: 'sup_musa', name: 'Alhaji Musa Bales', phone: '+234 802 111 9900', market: 'Katangua Market', notes: 'Direct importer of UK Grade A chiffon dresses and silk tops' },
+      { id: 'sup_musa', name: 'Alhaji Musa Bales', phone: '+234 802 111 9900', market: 'Amarantus Clothings', notes: 'Direct importer of UK Grade A chiffon dresses and silk tops' },
       { id: 'sup_beatrice', name: 'Madam Beatrice Okonkwo', phone: '+234 803 444 8811', market: 'Yaba Market', notes: 'Specializes in first-selection corporate skirts and trousers' },
       { id: 'sup_emeka', name: 'Emeka London Stock', phone: '+234 806 777 3322', market: 'Balogun Market', notes: 'Top supplier for men designer shirts, vintage denims and blazers' },
       { id: 'sup_kemi', name: 'Mama Kemi Children Bales', phone: '+234 809 555 1212', market: 'Aswani Market', notes: 'Wholesale children wear and toddler sets' },
@@ -103,11 +105,11 @@ async function seed() {
     // 5. Customers
     console.log('Creating Customers...');
     const customers = [
-      { id: 'cust_01', name: 'Funke Akindele', phone: '+234 803 999 1122', email: 'funke.a@example.com', address: 'Allen Avenue, Ikeja, Lagos', notes: 'Loves floral midi dresses and silk blouses' },
-      { id: 'cust_02', name: 'Tunde Bakare', phone: '+234 802 888 3344', email: 'tunde.b@example.com', address: 'Bode Thomas, Surulere, Lagos', notes: 'Regular buyer of corporate long-sleeve shirts' },
-      { id: 'cust_03', name: 'Zainab Ahmed', phone: '+234 806 555 7788', email: 'zainab.a@example.com', address: 'Adeola Odeku, Victoria Island, Lagos', notes: 'High-end thrift collector, buys luxury brands' },
-      { id: 'cust_04', name: 'Chioma Adeleke', phone: '+234 807 444 6655', email: 'chioma.ad@example.com', address: 'Admiralty Way, Lekki Phase 1, Lagos', notes: 'Bulk buyer for university students' },
-      { id: 'cust_05', name: 'Emeka Obi', phone: '+234 808 333 2211', email: 'emeka.obi@example.com', address: 'Commercial Avenue, Yaba, Lagos', notes: 'Prefers denim jackets and casual trousers' },
+      { id: 'cust_01', name: 'Funke Akindele', phone: '+234 803 999 1122', email: 'funke.a@example.com', address: 'Allen Avenue, Ikeja, FCT', notes: 'Loves floral midi dresses and silk blouses' },
+      { id: 'cust_02', name: 'Tunde Bakare', phone: '+234 802 888 3344', email: 'tunde.b@example.com', address: 'Bode Thomas, Surulere, FCT', notes: 'Regular buyer of corporate long-sleeve shirts' },
+      { id: 'cust_03', name: 'Zainab Ahmed', phone: '+234 806 555 7788', email: 'zainab.a@example.com', address: 'Adeola Odeku, Victoria Island, FCT', notes: 'High-end thrift collector, buys luxury brands' },
+      { id: 'cust_04', name: 'Chioma Adeleke', phone: '+234 807 444 6655', email: 'chioma.ad@example.com', address: 'Admiralty Way, Lekki Phase 1, FCT', notes: 'Bulk buyer for university students' },
+      { id: 'cust_05', name: 'Emeka Obi', phone: '+234 808 333 2211', email: 'emeka.obi@example.com', address: 'Commercial Avenue, Yaba, FCT', notes: 'Prefers denim jackets and casual trousers' },
     ];
 
     for (const cu of customers) {
@@ -467,7 +469,7 @@ async function seed() {
         transportCost: 8000,
         otherCosts: 2500,
         totalCost: 195500,
-        notes: 'Thursday Katangua opening bale: First selection chiffon dresses and silk blouses.',
+        notes: 'Thursday Amarantus Clothings opening bale: First selection chiffon dresses and silk blouses.',
         createdById: 'usr_owner',
         items: [
           { productId: 'prod_01', quantity: 15, unitCost: 3500, totalCost: 52500 },
@@ -660,11 +662,11 @@ async function seed() {
     // 9. Expenses
     console.log('Creating Expenses...');
     const expenses = [
-      { id: 'exp_01', category: 'TRANSPORT', description: 'Logistics fare to Katangua market for Thursday purchasing', amount: 8500, date: daysAgo(5), userId: 'usr_owner' },
+      { id: 'exp_01', category: 'TRANSPORT', description: 'Logistics fare to Amarantus Clothings for Thursday purchasing', amount: 8500, date: daysAgo(5), userId: 'usr_owner' },
       { id: 'exp_02', category: 'PACKAGING', description: 'Branded nylon shopping bags and price tagging pins', amount: 14000, date: daysAgo(10), userId: 'usr_manager' },
       { id: 'exp_03', category: 'ELECTRICITY', description: 'Monthly EKEDC token and generator fuel for shop display lights', amount: 22000, date: daysAgo(8), userId: 'usr_owner' },
       { id: 'exp_04', category: 'STAFF', description: 'Weekly lunch & transport allowance for Blessing', amount: 12500, date: daysAgo(2), userId: 'usr_owner' },
-      { id: 'exp_05', category: 'MARKET_EXPENSE', description: 'Market gate fee, wheelbarrow porter & bale opening fee at Katangua', amount: 6000, date: daysAgo(5), userId: 'usr_manager' },
+      { id: 'exp_05', category: 'MARKET_EXPENSE', description: 'Market gate fee, wheelbarrow porter & bale opening fee at Amarantus Clothings', amount: 6000, date: daysAgo(5), userId: 'usr_manager' },
       { id: 'exp_06', category: 'MARKETING', description: 'Instagram sponsored post for weekend thrift drops', amount: 10000, date: daysAgo(4), userId: 'usr_owner' },
     ];
 
@@ -709,7 +711,7 @@ async function seed() {
         id: 'post_01',
         productId: 'prod_01',
         platform: 'WHATSAPP',
-        caption: `✨ *NEW ARRIVAL AT ELEGANCE THRIFT HAVEN* ✨\n\n👗 *Item:* Vintage Floral Chiffon Wrap Dress\n🏷️ Brand: Zara\n📏 *Size:* M\n⭐ *Condition:* Grade A (First Selection - Like New)\n💰 *Price:* ₦8,500\n\n📍 *Shop Location:* Shop 14, Block B, Katangua Main Complex, Super B/Stop, Lagos\n🚚 Fast delivery available across Lagos & nationwide!\n\n📲 *To order or claim:* Reply to this status or WhatsApp +234 803 123 4567\n⚡ Only 1 piece available! Fastest finger wins.`,
+        caption: `✨ *NEW ARRIVAL AT AMARANTUS CLOTHINGS* ✨\n\n👗 *Item:* Vintage Floral Chiffon Wrap Dress\n🏷️ Brand: Zara\n📏 *Size:* M\n⭐ *Condition:* Grade A (First Selection - Like New)\n💰 *Price:* ₦8,500\n\n📍 *Shop Location:* Plot 78 Gbazango Kubwa FCT, Nigeria\n🚚 Fast delivery available across FCT & nationwide!\n\n📲 *To order or claim:* Reply to this status or WhatsApp +234 9065043549\n⚡ Only 1 piece available! Fastest finger wins.`,
         imageUrl: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=600&q=80',
         status: 'READY',
       },
@@ -717,7 +719,7 @@ async function seed() {
         id: 'post_02',
         productId: 'prod_05',
         platform: 'INSTAGRAM',
-        caption: `✨ Fresh Thrift Pick! ✨\n\nTommy Hilfiger Striped Oxford Shirt in stunning condition.\n\nDETAILS:\n• Size: L\n• Brand: Tommy Hilfiger\n• Quality: Grade A (First Selection - Like New)\n• Price: ₦9,500\n\n📍 Visit us: Shop 14, Block B, Katangua Main Complex, Super B/Stop, Lagos\n📦 We deliver doorstep nationwide!\n\nHOW TO ORDER:\n1. Send a DM with screenshot\n2. Or WhatsApp us via link in bio (+234 803 123 4567)\n\n#lagosthrift #thriftlagos #okrikaonline #katanguamarket #yabathrift #nigerianfashion #sustainablefashionng #menshirts`,
+        caption: `✨ Fresh Thrift Pick! ✨\n\nTommy Hilfiger Striped Oxford Shirt in stunning condition.\n\nDETAILS:\n• Size: L\n• Brand: Tommy Hilfiger\n• Quality: Grade A (First Selection - Like New)\n• Price: ₦9,500\n\n📍 Visit us: Plot 78 Gbazango Kubwa FCT, Nigeria\n📦 We deliver doorstep nationwide!\n\nHOW TO ORDER:\n1. Send a DM with screenshot\n2. Or WhatsApp us via link in bio (+234 9065043549)\n\n#fctthrift #thriftfct #okrikaonline #amarantusclothings #abujathrift #nigerianfashion #sustainablefashionng #menshirts`,
         imageUrl: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=600&q=80',
         status: 'POSTED',
       },
@@ -735,13 +737,13 @@ async function seed() {
     await client.query(`
       INSERT INTO audit_logs (id, "userId", action, entity, "entityId", description, "createdAt")
       VALUES 
-      ('aud_01', 'usr_owner', 'DATABASE_SEED', 'System', null, 'Initial database setup and demo inventory seed loaded', NOW()),
-      ('aud_02', 'usr_owner', 'CREATE_PURCHASE_BATCH', 'PurchaseBatch', 'batch_01', 'Recorded Thursday Katangua opening bale (₦195,500 total)', NOW() - INTERVAL '12 days'),
+      ('aud_01', 'usr_amarantus', 'DATABASE_SEED', 'System', null, 'Initial database setup and demo inventory seed loaded', NOW()),
+      ('aud_02', 'usr_amarantus', 'CREATE_PURCHASE_BATCH', 'PurchaseBatch', 'batch_01', 'Recorded Thursday Amarantus Clothings opening bale (₦195,500 total)', NOW() - INTERVAL '12 days'),
       ('aud_03', 'usr_staff', 'CREATE_SALE', 'Sale', 'sale_01', 'Processed Sale SALE-20260930-001 for Funke Akindele (₦16,000)', NOW())
     `);
 
     await client.query('COMMIT');
-    console.log('✅ ClothShop Manager database seeded successfully!');
+    console.log('✅ Amarantus Clothings Manager database seeded successfully!');
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('❌ Error during seeding:', err);

@@ -95,9 +95,9 @@ export async function GET(request: Request) {
     // Get shop profile
     const shopRes = await query(`SELECT name, phone, address, currency FROM shops LIMIT 1`);
     const shop = shopRes.rows[0] || {
-      name: 'Elegance Thrift Haven',
-      phone: '+234 803 123 4567',
-      address: 'Shop 14, Block B, Katangua Main Complex, Super B/Stop, Lagos',
+      name: 'Amarantus Clothings',
+      phone: '+234 9065043549',
+      address: 'Plot 78 Gbazango Kubwa FCT',
       currency: 'NGN',
     };
 

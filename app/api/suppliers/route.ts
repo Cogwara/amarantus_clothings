@@ -6,7 +6,7 @@ import { z } from 'zod';
 const supplierSchema = z.object({
   name: z.string().min(2, 'Supplier name is required'),
   phone: z.string().optional().nullable(),
-  market: z.string().default('Katangua Market'),
+  market: z.string().default('Amarantus Clothings'),
   notes: z.string().optional().nullable(),
 });
 

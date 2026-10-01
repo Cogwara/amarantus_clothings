@@ -1,6 +1,6 @@
 const http = require('http');
 
-const BASE_URL = 'http://localhost:3005';
+const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3001';
 
 async function request(path, options = {}) {
   const url = new URL(path, BASE_URL);
@@ -55,7 +55,7 @@ async function runTests() {
     // 1. Check Login Page
     console.log('\n--- Test 1: Web Pages Rendering ---');
     const loginPage = await request('/login');
-    assert(loginPage.status === 200 && loginPage.body.includes('ClothShop Manager'), 'Login page renders HTML with brand title');
+    assert(loginPage.status === 200 && loginPage.body.includes('Amarantus Clothings Manager'), 'Login page renders HTML with brand title');
 
     const dashPage = await request('/dashboard');
     assert(dashPage.status === 200, 'Dashboard page route responds 200 OK');
@@ -77,7 +77,7 @@ async function runTests() {
     const loginRes = await request('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: { email: 'owner@clothshop.ng', password: 'password123' },
+      body: { email: 'amarantus@gmail.com', password: 'Amarantus@123' },
     });
 
     assert(loginRes.status === 200 && loginRes.json?.success === true, 'Owner login successful');
@@ -90,7 +90,7 @@ async function runTests() {
     const authMe = await request('/api/auth/me', {
       headers: { Cookie: sessionCookie },
     });
-    assert(authMe.status === 200 && authMe.json?.user?.email === 'owner@clothshop.ng', 'Session verified via /api/auth/me');
+    assert(authMe.status === 200 && authMe.json?.user?.email === 'amarantus@gmail.com', 'Session verified via /api/auth/me');
 
     // 3. Notifications API
     console.log('\n--- Test 3: Notifications API ---');
@@ -169,7 +169,7 @@ async function runTests() {
     });
     assert(receiptRes.status === 200, 'Sale receipt endpoint responded 200');
     assert(receiptRes.json?.sale?.saleNumber !== undefined, `Receipt contains saleNumber: ${receiptRes.json?.sale?.saleNumber}`);
-    assert(receiptRes.json?.shop?.name === 'Elegance Thrift Haven', `Receipt shop name: ${receiptRes.json?.shop?.name}`);
+    assert(receiptRes.json?.shop?.name === 'Amarantus Clothings', `Receipt shop name: ${receiptRes.json?.shop?.name}`);
     assert(receiptRes.json?.items?.length === 1, 'Receipt contains purchased item');
 
     // 8. Stock Adjustment API
@@ -225,7 +225,7 @@ async function runTests() {
         purchaseDate: new Date().toISOString().slice(0, 10),
         transportCost: 6000,
         otherCosts: 1500,
-        notes: 'Test Katangua market batch',
+        notes: 'Test Amarantus Clothings batch',
         items: [
           {
             productId: testProduct.id,

@@ -587,7 +587,7 @@ export default function DashboardPage() {
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <div>
                 <CardTitle className="text-base">Recent Market Purchases</CardTitle>
-                <p className="text-xs text-[#66736B]">Bales received from Katangua & Balogun</p>
+                <p className="text-xs text-[#66736B]">Bales received from Amarantus Clothings & Balogun</p>
               </div>
               <Link href="/purchases" className="text-xs text-[#16803C] hover:underline font-semibold">
                 Purchasing →

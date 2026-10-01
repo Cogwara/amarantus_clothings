@@ -62,13 +62,13 @@ export function AppShell({
             <div className="flex items-center justify-between p-4 border-b border-[#F0F4F1]">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-[8px] bg-[#16803C] text-white flex items-center justify-center font-bold text-sm">
-                  CS
+                  AC
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-[#17211B]">
-                    ClothShop
+                    Amarantus Clothings
                   </h3>
-                  <p className="text-[11px] text-[#66736B]">Elegance Thrift</p>
+                  <p className="text-[11px] text-[#66736B]">Amarantus Clothings</p>
                 </div>
               </div>
               <button

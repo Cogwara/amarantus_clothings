@@ -352,7 +352,7 @@ export default function ExpensesPage() {
 
           <Input
             label="Description / Purpose"
-            placeholder="e.g. Bus fare to Katangua market for Thursday bale opening"
+            placeholder="e.g. Bus fare to Amarantus Clothings for Thursday bale opening"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required

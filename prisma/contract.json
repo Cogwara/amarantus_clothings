@@ -4038,7 +4038,7 @@
                   "codecId": "pg/text@1",
                   "default": {
                     "kind": "literal",
-                    "value": "Shop 14, Katangua Main Complex, Super, Lagos, Nigeria"
+                    "value": "Plot 78 Gbazango Kubwa FCT, Nigeria"
                   },
                   "nativeType": "text",
                   "nullable": false
@@ -4374,7 +4374,7 @@
                   "codecId": "pg/text@1",
                   "default": {
                     "kind": "literal",
-                    "value": "Katangua Market"
+                    "value": "Amarantus Clothings"
                   },
                   "nativeType": "text",
                   "nullable": false

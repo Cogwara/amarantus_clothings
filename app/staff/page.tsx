@@ -358,7 +358,7 @@ export default function StaffPage() {
           <Input
             label="Email Address (Login Username)"
             type="email"
-            placeholder="blessing@clothshop.ng"
+            placeholder="blessing@amarantus.ng"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required

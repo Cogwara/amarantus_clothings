@@ -33,9 +33,9 @@ export default function SocialSellingPage() {
   const [savingPost, setSavingPost] = React.useState(false);
 
   const shopDetails = {
-    name: 'Elegance Thrift Haven',
-    phone: '+234 803 123 4567',
-    address: 'Shop 14, Block B, Katangua Main Complex, Super, Lagos',
+    name: 'Amarantus Clothings',
+    phone: '+234 9065043549',
+    address: 'Plot 78 Gbazango Kubwa FCT',
   };
 
   const loadData = React.useCallback(async () => {

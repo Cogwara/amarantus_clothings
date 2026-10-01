@@ -1,7 +1,7 @@
-# 🛍️ ClothShop Manager
+# 🛍️ Amarantus Clothings Manager
 > **A complete clothing business management platform for used-clothing (thrift/okrika) retail businesses.**
 
-Built as a production-quality, mobile-first full-stack application tailored for Nigerian clothing retail shops. It streamlines purchasing from weekly wholesale markets (e.g., Katangua, Balogun, Yaba, Aswani), inventory tracking, touch-friendly Point of Sale (POS), operating expenses, customer purchase histories, clearance markdown recommendations, social media advertising, and automated Thursday market purchasing planning.
+Built as a production-quality, mobile-first full-stack application tailored for Nigerian clothing retail shops. It streamlines purchasing from weekly wholesale markets (e.g., Amarantus Clothings, Balogun, Yaba, Aswani), inventory tracking, touch-friendly Point of Sale (POS), operating expenses, customer purchase histories, clearance markdown recommendations, social media advertising, and automated Thursday market purchasing planning.
 
 ---
 
@@ -26,7 +26,7 @@ Built as a production-quality, mobile-first full-stack application tailored for 
 - **Manual Stock Adjustments:** Authorized managers can correct counts with required audit notes.
 
 ### 4. 🚚 Purchasing & Thursday Market Intake
-- **Wholesale Workflow:** Built for weekly market trips (Katangua Market, Balogun, Yaba, etc.).
+- **Wholesale Workflow:** Built for weekly market trips (Amarantus Clothings, Balogun, Yaba, etc.).
 - **Total Investment Accounting:** Accounts for purchase bale price, market transport, gate fees, and porter costs.
 - **Automatic Stock Inflow:** Recording a purchase batch automatically increments inventory quantities, updates unit cost prices, and logs `PURCHASE` stock movements.
 
@@ -45,7 +45,7 @@ Built as a production-quality, mobile-first full-stack application tailored for 
 ### 7. 📲 Social Selling Studio
 - **Drop Announcements:** Select any piece in inventory to generate engaging, emoji-rich captions.
 - **WhatsApp Status Ready:** Single-piece exclusivity urgency, sizing, location, and direct call to action.
-- **Instagram Ready:** Formatted details, local Lagos thrift hashtags, and DM order steps.
+- **Instagram Ready:** Formatted details, local FCT thrift hashtags, and DM order steps.
 - **One-Click Copy:** Instant clipboard copy for immediate posting.
 
 ### 8. 👥 Customer Relationship Management
@@ -142,15 +142,14 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🔐 Default Demo Accounts
 
-The database comes pre-seeded with 3 realistic demo accounts for immediate testing:
+The database includes accounts for shop management:
 
 | Role | Email | Password | Access Level |
 |---|---|---|---|
-| 👑 **Shop Owner** | `owner@clothshop.ng` | `password123` | Full access (Financials, Staff, Settings, Reset) |
+| 👑 **Shop Owner** | `amarantus@gmail.com` | `Amarantus@123` | Full access (Financials, Staff, Settings, Reset) |
+| 👑 **Shop Owner (Demo)** | `owner@clothshop.ng` | `password123` | Full access (Financials, Staff, Settings, Reset) |
 | 📋 **Shop Manager** | `manager@clothshop.ng` | `password123` | Operations, Purchasing, POS, Reports, Clearance |
 | 🛍️ **Shop Staff** | `staff@clothshop.ng` | `password123` | Sales POS, Customer Directory, View-only Inventory |
-
-*Tip: Quick 1-click login buttons for each role are available directly on the login screen.*
 
 ---
 
@@ -176,13 +175,13 @@ Verifies:
 
 ## 🚢 Deployment to Vercel
 
-ClothShop Manager is engineered to be deployed directly to Vercel with zero filesystem dependency:
+Amarantus Clothings Manager is engineered to be deployed directly to Vercel with zero filesystem dependency:
 
 1. **Push to GitHub / GitLab:**
    ```bash
    git init
    git add .
-   git commit -m "feat: complete ClothShop Manager platform"
+   git commit -m "feat: complete Amarantus Clothings Manager platform"
    git push origin main
    ```
 

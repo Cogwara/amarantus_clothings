@@ -217,7 +217,7 @@ export default function PurchasesPage() {
                 Thursday Market Day Workflow
               </h3>
               <p className="text-xs text-[#16803C] mt-1 max-w-2xl leading-relaxed">
-                1. Review Thursday recommended quantities → 2. Purchase thrift bales at Katangua / Balogun → 3. Record purchase batch and costs → 4. Stock automatically increases in inventory!
+                1. Review Thursday recommended quantities → 2. Purchase thrift bales at Amarantus Clothings / Balogun → 3. Record purchase batch and costs → 4. Stock automatically increases in inventory!
               </p>
             </div>
           </div>
@@ -296,7 +296,7 @@ export default function PurchasesPage() {
                             {b.supplierName || 'Market Wholesaler'}
                           </p>
                           <p className="text-[10px] text-[#66736B]">
-                            {b.market || 'Katangua Market'}
+                            {b.market || 'Amarantus Clothings'}
                           </p>
                         </td>
                         <td className="py-3 px-3 text-center">
@@ -393,7 +393,7 @@ export default function PurchasesPage() {
             <div className="sm:col-span-2">
               <Input
                 label="Notes / Market Trip Comments"
-                placeholder="e.g. Katangua Thursday early opening, Grade A floral chiffon bales"
+                placeholder="e.g. Amarantus Clothings Thursday early opening, Grade A floral chiffon bales"
                 value={batchNotes}
                 onChange={(e) => setBatchNotes(e.target.value)}
               />

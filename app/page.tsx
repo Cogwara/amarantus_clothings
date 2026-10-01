@@ -52,9 +52,9 @@ export default function FrontShopPage() {
   const [products, setProducts] = React.useState<Product[]>([]);
   const [categories, setCategories] = React.useState<any[]>([]);
   const [shop, setShop] = React.useState<any>({
-    name: 'Elegance Thrift Haven',
-    phone: '+234 803 123 4567',
-    address: 'Shop 14, Block B, Katangua Main Complex, Super B/Stop, Lagos',
+    name: 'Amarantus Clothings',
+    phone: '+234 9065043549',
+    address: 'Plot 78 Gbazango Kubwa FCT',
     currency: 'NGN',
   });
   const [loading, setLoading] = React.useState(true);
@@ -312,16 +312,16 @@ export default function FrontShopPage() {
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1 text-[#D96F0B] font-bold">
               <Star className="w-3.5 h-3.5 fill-[#F28C28] text-[#F28C28]" />
-              <span>Sell on ClothShop</span>
+              <span>Sell on Amarantus Clothings</span>
             </span>
             <span className="text-[#DDE5DF]">|</span>
-            <span className="text-[11px] text-[#66736B]">Katangua Market Direct Thrift Bales</span>
+            <span className="text-[11px] text-[#66736B]">Amarantus Clothings Direct Thrift Bales</span>
           </div>
 
           <div className="flex items-center gap-4 text-[11px] text-[#66736B] font-semibold">
-            <span className="text-[#16803C] font-bold">CLOTHSHOP PAY</span>
+            <span className="text-[#16803C] font-bold">AMARANTUS CLOTHINGS PAY</span>
             <span className="text-gray-300">•</span>
-            <span>KATANGUA EXPRESS</span>
+            <span>AMARANTUS EXPRESS</span>
             <span className="text-gray-300">•</span>
             <span>DOORSTEP WAYBILL</span>
             <span className="text-gray-300">•</span>
@@ -336,7 +336,7 @@ export default function FrontShopPage() {
           {/* Jumia-Style Logo */}
           <Link href="/" className="flex items-center gap-1.5 shrink-0 group">
             <span className="text-2xl sm:text-3xl font-black tracking-tight text-[#17211B]">
-              CLOTHSHOP
+              AMARANTUS CLOTHINGS
             </span>
             <div className="w-6 h-6 rounded-full bg-[#F28C28] flex items-center justify-center text-white text-xs font-black shadow-sm group-hover:scale-110 transition-transform">
               ★
@@ -464,7 +464,7 @@ export default function FrontShopPage() {
                     className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#17211B] hover:bg-[#F8FAF9] rounded-[8px] transition-colors"
                   >
                     <MapPin className="w-4 h-4 text-[#66736B]" />
-                    <span>Katangua Physical Shop</span>
+                    <span>Amarantus Clothings Physical Shop</span>
                   </a>
                 </div>
               )}
@@ -633,7 +633,7 @@ export default function FrontShopPage() {
                   <Star className="w-3.5 h-3.5 fill-[#F28C28]" />
                   <span>Wholesale Bales</span>
                 </div>
-                <span className="text-[10px]">Katangua</span>
+                <span className="text-[10px]">Amarantus</span>
               </a>
             </div>
           </aside>
@@ -690,7 +690,7 @@ export default function FrontShopPage() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4 text-white">
                     <span className="text-[10px] font-bold text-[#F28C28] uppercase tracking-wider">
-                      Direct From Katangua & Balogun
+                      Direct From Amarantus Clothings & Balogun
                     </span>
                     <p className="text-xs font-bold text-white leading-snug">
                       Grade A Handpicked Okrika Drops Every Thursday
@@ -1152,7 +1152,7 @@ export default function FrontShopPage() {
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center font-bold text-gray-300">
                       <ShoppingBag className="w-12 h-12 stroke-1 text-gray-300" />
-                      <span className="text-xs text-[#8A968F] mt-2 font-medium">ClothShop Thrift</span>
+                      <span className="text-xs text-[#8A968F] mt-2 font-medium">Amarantus Clothings Thrift</span>
                     </div>
                   )}
 
@@ -1178,7 +1178,7 @@ export default function FrontShopPage() {
                   </div>
                   <div className="flex items-center gap-2 text-[#66736B]">
                     <Truck className="w-4 h-4 text-[#16803C] shrink-0" />
-                    <span>Available in Katangua shop & online</span>
+                    <span>Available in Amarantus Clothings shop & online</span>
                   </div>
                 </div>
               </div>
@@ -1299,7 +1299,7 @@ export default function FrontShopPage() {
                   </div>
 
                   <p className="text-[11px] text-center text-[#8A968F] font-medium">
-                    ⚡ Fast Lagos Delivery & Nationwide Waybill
+                    ⚡ Fast FCT Delivery & Nationwide Waybill
                   </p>
                 </div>
               </div>
@@ -1433,7 +1433,7 @@ export default function FrontShopPage() {
 
                     <Input
                       label="Delivery Location / Address"
-                      placeholder="e.g. Ikeja, Lagos (or Pickup at Katangua Shop)"
+                      placeholder="e.g. Kubwa, FCT (or Pickup at Amarantus Clothings Shop)"
                       value={checkoutAddress}
                       onChange={(e) => setCheckoutAddress(e.target.value)}
                       required
@@ -1589,10 +1589,10 @@ export default function FrontShopPage() {
               Visit Our Retail Store
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-[#17211B]">
-              Located Right In Katangua Market
+              Located Right In FCT
             </h2>
             <p className="text-xs sm:text-sm text-[#66736B] leading-relaxed">
-              Prefer to see, touch, and try on our clothes in person? Visit our physical thrift boutique inside the bustling Katangua Super market complex.
+              Prefer to see, touch, and try on our clothes in person? Visit our physical thrift boutique at Amarantus Clothings in FCT.
             </p>
 
             <div className="p-4 bg-[#F8FAF9] rounded-[12px] border border-[#DDE5DF] space-y-3 text-xs">
@@ -1725,7 +1725,7 @@ export default function FrontShopPage() {
           <div>
             <p className="font-bold text-sm">{shop.name}</p>
             <p className="text-gray-400 text-[11px] mt-0.5">
-              Grade A Thrift Boutique • Katangua Market, Super B/Stop, Lagos, Nigeria
+              Grade A Thrift Boutique • Amarantus Clothings, FCT, Nigeria
             </p>
           </div>
 

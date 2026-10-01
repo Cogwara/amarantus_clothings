@@ -124,7 +124,7 @@ export default function ThursdayPlanPage() {
                 </Badge>
               </div>
               <p className="text-xs text-[#16803C] mt-1 max-w-2xl leading-relaxed">
-                Calculates required stock from 30-day actual sales data. Use this shopping list at Katangua or Balogun market. You can manually adjust quantities as needed!
+                Calculates required stock from 30-day actual sales data. Use this shopping list at Amarantus Clothings or Balogun market. You can manually adjust quantities as needed!
               </p>
             </div>
           </div>

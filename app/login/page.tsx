@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { ShoppingBag, Lock, Mail, ShieldCheck, UserCheck, Sparkles } from 'lucide-react';
+import { Lock, Mail } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = React.useState('owner@clothshop.ng');
-  const [password, setPassword] = React.useState('password123');
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
 
@@ -40,21 +40,16 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickLogin = (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword('password123');
-  };
-
   return (
     <div className="min-h-screen bg-[#F8FAF9] flex flex-col justify-center items-center px-4 py-8">
       <div className="w-full max-w-md space-y-6">
         {/* Brand Logo Header */}
         <div className="text-center space-y-2">
           <div className="inline-flex w-16 h-16 rounded-[16px] bg-[#16803C] text-white items-center justify-center font-black text-2xl shadow-md">
-            CS
+            AC
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-[#17211B] tracking-tight">
-            ClothShop Manager
+            Amarantus Clothings Manager
           </h1>
           <p className="text-sm text-[#66736B]">
             Thrift & Used-Clothing Retail Business Platform
@@ -66,7 +61,7 @@ export default function LoginPage() {
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-xl">Sign in to your shop</CardTitle>
             <CardDescription>
-              Enter your credentials or choose a quick role below
+              Enter your credentials below to access your dashboard
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-2">
@@ -80,7 +75,7 @@ export default function LoginPage() {
               <Input
                 label="Email Address"
                 type="email"
-                placeholder="name@clothshop.ng"
+                placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 leftIcon={<Mail className="w-4 h-4" />}
@@ -107,60 +102,12 @@ export default function LoginPage() {
                 Sign In to Dashboard
               </Button>
             </form>
-
-            {/* Quick Demo Switcher */}
-            <div className="mt-6 pt-5 border-t border-[#F0F4F1]">
-              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#66736B] mb-3">
-                <Sparkles className="w-3.5 h-3.5 text-[#F28C28]" />
-                <span>Quick Role Demo Logins</span>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleQuickLogin('owner@clothshop.ng')}
-                  className={`p-2 rounded-[10px] border text-left transition-all ${
-                    email === 'owner@clothshop.ng'
-                      ? 'border-[#16803C] bg-[#EAF7EE] text-[#16803C]'
-                      : 'border-[#DDE5DF] bg-white hover:bg-[#F8FAF9] text-[#17211B]'
-                  }`}
-                >
-                  <p className="text-xs font-bold">Owner</p>
-                  <p className="text-[10px] text-[#66736B]">Amaka (Full)</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleQuickLogin('manager@clothshop.ng')}
-                  className={`p-2 rounded-[10px] border text-left transition-all ${
-                    email === 'manager@clothshop.ng'
-                      ? 'border-[#F28C28] bg-[#FFF1E2] text-[#D96F0B]'
-                      : 'border-[#DDE5DF] bg-white hover:bg-[#F8FAF9] text-[#17211B]'
-                  }`}
-                >
-                  <p className="text-xs font-bold">Manager</p>
-                  <p className="text-[10px] text-[#66736B]">Chidi (Ops)</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleQuickLogin('staff@clothshop.ng')}
-                  className={`p-2 rounded-[10px] border text-left transition-all ${
-                    email === 'staff@clothshop.ng'
-                      ? 'border-[#16803C] bg-[#EAF7EE] text-[#16803C]'
-                      : 'border-[#DDE5DF] bg-white hover:bg-[#F8FAF9] text-[#17211B]'
-                  }`}
-                >
-                  <p className="text-xs font-bold">Staff</p>
-                  <p className="text-[10px] text-[#66736B]">Blessing (POS)</p>
-                </button>
-              </div>
-            </div>
           </CardContent>
         </Card>
 
         {/* Market Routine Note */}
         <p className="text-center text-xs text-[#66736B]">
-          Elegance Thrift Haven • Katangua Market Branch • Lagos, Nigeria
+          Amarantus Clothings • FCT, Nigeria
         </p>
       </div>
     </div>

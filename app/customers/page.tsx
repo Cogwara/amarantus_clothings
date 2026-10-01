@@ -320,8 +320,8 @@ export default function CustomersPage() {
           />
 
           <Input
-            label="Address or Lagos Area"
-            placeholder="e.g. Allen Avenue, Ikeja, Lagos"
+            label="Address or FCT Area"
+            placeholder="e.g. Garki, Kubwa, FCT"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
           />

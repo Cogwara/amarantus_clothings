@@ -114,18 +114,18 @@ export function Sidebar({ userRole = 'OWNER' }: SidebarProps) {
       {/* Brand Header */}
       <div className="flex items-center gap-3 px-6 h-16 border-b border-[#F0F4F1]">
         <div className="w-10 h-10 rounded-[10px] bg-[#16803C] flex items-center justify-center text-white font-black text-lg shadow-sm">
-          CS
+          AC
         </div>
         <div>
           <div className="flex items-center gap-1.5">
             <h1 className="font-bold text-base text-[#17211B] leading-none">
-              ClothShop
+              Amarantus Clothings
             </h1>
             <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#FFF1E2] text-[#D96F0B]">
               Manager
             </span>
           </div>
-          <p className="text-[11px] text-[#66736B] mt-0.5">Elegance Thrift Haven</p>
+          <p className="text-[11px] text-[#66736B] mt-0.5">Amarantus Clothings</p>
         </div>
       </div>
 
@@ -196,7 +196,7 @@ export function Sidebar({ userRole = 'OWNER' }: SidebarProps) {
           <span>Market Day Routine</span>
         </div>
         <p className="text-[11px] text-[#0F5C2E] mt-1 leading-snug">
-          Thursdays are for Katangua & Balogun market purchasing. Check your plan!
+          Thursdays are for Amarantus Clothings & Balogun market purchasing. Check your plan!
         </p>
         <Link
           href="/thursday-plan"

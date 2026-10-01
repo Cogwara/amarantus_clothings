@@ -720,7 +720,7 @@ export default function SalesPage() {
           />
           <Input
             label="Address or Area"
-            placeholder="e.g. Ikeja, Lagos"
+            placeholder="e.g. Kubwa, FCT"
             value={newCustAddress}
             onChange={(e) => setNewCustAddress(e.target.value)}
           />

@@ -165,7 +165,7 @@ export default function SettingsPage() {
                     label="Physical Shop Address"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="e.g. Shop 14, Block B, Katangua Main Complex, Super B/Stop, Lagos"
+                    placeholder="e.g. Plot 78 Gbazango Kubwa FCT"
                     required
                   />
                 </div>
@@ -216,7 +216,7 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="p-5 space-y-4">
             <p className="text-xs text-[#17211B] leading-relaxed">
-              The application comes pre-loaded with realistic Nigerian used-clothing retail sample data (Katangua & Balogun market suppliers, thrift dresses, shirts, jackets, recent sales and Thursday purchasing plan). You can reset or re-seed the dataset anytime below.
+              The application comes pre-loaded with realistic Nigerian used-clothing retail sample data (Amarantus Clothings & Balogun market suppliers, thrift dresses, shirts, jackets, recent sales and Thursday purchasing plan). You can reset or re-seed the dataset anytime below.
             </p>
 
             {/* Current Counts Summary */}
