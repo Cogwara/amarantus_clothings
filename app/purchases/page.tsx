@@ -20,6 +20,8 @@ import {
   Sparkles,
   ArrowRight,
   ExternalLink,
+  AlertTriangle,
+  CheckCircle2,
 } from 'lucide-react';
 import { formatNaira } from '@/lib/calculations';
 import { PurchaseBatch, Supplier, Product } from '@/lib/types';
@@ -63,6 +65,12 @@ export default function PurchasesPage() {
   const [batchDetails, setBatchDetails] = React.useState<any>(null);
   const [loadingDetails, setLoadingDetails] = React.useState(false);
 
+  // Delete Batch (Owner Only)
+  const [batchToDelete, setBatchToDelete] = React.useState<any | null>(null);
+  const [deletingBatch, setDeletingBatch] = React.useState(false);
+  const [deleteBatchError, setDeleteBatchError] = React.useState('');
+  const [deleteBatchSuccess, setDeleteBatchSuccess] = React.useState('');
+
   const loadData = React.useCallback(async () => {
     try {
       setLoading(true);
@@ -85,6 +93,28 @@ export default function PurchasesPage() {
   React.useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleDeleteBatch = async () => {
+    if (!batchToDelete) return;
+    setDeletingBatch(true);
+    setDeleteBatchError('');
+    try {
+      const res = await fetch(`/api/purchases/${batchToDelete.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete purchase batch');
+      }
+      setBatchToDelete(null);
+      setViewingBatchId(null);
+      setDeleteBatchSuccess(`Batch ${batchToDelete.batchNumber} deleted successfully.`);
+      setTimeout(() => setDeleteBatchSuccess(''), 4000);
+      loadData();
+    } catch (err: any) {
+      setDeleteBatchError(err?.message || 'Error deleting purchase batch');
+    } finally {
+      setDeletingBatch(false);
+    }
+  };
 
   // When product is selected in item adder, default to its cost & price
   const handleProductSelectChange = (id: string) => {
@@ -235,6 +265,13 @@ export default function PurchasesPage() {
           </div>
         </div>
 
+        {deleteBatchSuccess && (
+          <div className="p-3 bg-[#EAF7EE] border border-[#C5E9CE] rounded-[10px] text-xs font-bold text-[#16803C] flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{deleteBatchSuccess}</span>
+          </div>
+        )}
+
         {/* Batches List */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -314,14 +351,30 @@ export default function PurchasesPage() {
                           {formatNaira(b.totalCost)}
                         </td>
                         <td className="py-3 px-4 text-center">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewBatch(b.id)}
-                            className="h-7 text-xs"
-                          >
-                            Details
-                          </Button>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewBatch(b.id)}
+                              className="h-7 text-xs"
+                            >
+                              Details
+                            </Button>
+                            {currentUser?.role === 'OWNER' && (
+                              <Button
+                                variant="danger"
+                                size="sm"
+                                onClick={() => {
+                                  setDeleteBatchError('');
+                                  setBatchToDelete(b);
+                                }}
+                                className="h-7 text-xs px-2"
+                                title="Delete Purchase Batch"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -660,6 +713,107 @@ export default function PurchasesPage() {
                 Notes: &quot;{batchDetails.batch.notes}&quot;
               </p>
             )}
+
+            <div className="flex items-center justify-between pt-3 border-t border-[#F0F4F1]">
+              <div>
+                {currentUser?.role === 'OWNER' && (
+                  <Button
+                    type="button"
+                    variant="danger"
+                    size="sm"
+                    onClick={() => {
+                      const toDelete = batchDetails.batch;
+                      setViewingBatchId(null);
+                      setDeleteBatchError('');
+                      setBatchToDelete(toDelete);
+                    }}
+                    className="text-xs font-semibold"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1.5" />
+                    <span>Delete Batch</span>
+                  </Button>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setViewingBatchId(null)}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Delete Purchase Batch Confirmation Modal */}
+      <Modal
+        isOpen={Boolean(batchToDelete)}
+        onClose={() => !deletingBatch && setBatchToDelete(null)}
+        title="Delete Purchase Batch"
+        maxWidth="md"
+      >
+        {batchToDelete && (
+          <div className="p-4 sm:p-6 space-y-4">
+            {deleteBatchError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-[10px] text-xs font-bold text-red-600">
+                {deleteBatchError}
+              </div>
+            )}
+
+            <div className="flex items-start gap-3 p-3.5 bg-red-50/60 rounded-[12px] border border-red-200/80">
+              <div className="p-2 bg-red-100 rounded-full text-red-600 shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="text-xs text-[#17211B] space-y-1">
+                <p className="font-bold text-red-900">
+                  Are you sure you want to delete this purchase intake?
+                </p>
+                <p className="text-[#66736B]">
+                  This will remove batch <strong>{batchToDelete.batchNumber}</strong> and <strong>reduce received item quantities from current shop stock</strong>.
+                </p>
+              </div>
+            </div>
+
+            {/* Batch Summary Card */}
+            <div className="p-3 bg-[#F8FAF9] rounded-[10px] border border-[#DDE5DF] text-xs space-y-1.5">
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-[#17211B]">{batchToDelete.batchNumber}</span>
+                <span className="font-extrabold text-[#16803C] text-sm">
+                  {formatNaira(batchToDelete.totalCost)}
+                </span>
+              </div>
+              <div className="flex justify-between text-[#66736B] text-[11px]">
+                <span>Supplier: {batchToDelete.supplierName || 'Market Seller'}</span>
+                <span>{batchToDelete.itemCount || 0} product types ({batchToDelete.totalPieces || 0} pcs)</span>
+              </div>
+              <p className="text-[10px] text-[#66736B]">
+                Date: {new Date(batchToDelete.purchaseDate).toLocaleDateString('en-NG')}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#F0F4F1]">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={() => setBatchToDelete(null)}
+                disabled={deletingBatch}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                size="md"
+                onClick={handleDeleteBatch}
+                disabled={deletingBatch}
+                className="font-bold min-w-[120px]"
+              >
+                {deletingBatch ? 'Deleting...' : 'Confirm Delete'}
+              </Button>
+            </div>
           </div>
         )}
       </Modal>

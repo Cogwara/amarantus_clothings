@@ -17,6 +17,8 @@ import {
   AlertTriangle,
   Flame,
   ArrowRight,
+  Trash2,
+  RotateCcw,
 } from 'lucide-react';
 import {
   formatNaira,
@@ -58,6 +60,38 @@ export default function ClearancePage() {
   React.useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleRemoveClearance = async (productId: string) => {
+    if (!confirm('Remove this product from clearance and return to regular inventory?')) return;
+    try {
+      const res = await fetch(`/api/clearance?productId=${productId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to remove clearance');
+      }
+      setSuccessMsg(data.message || 'Removed from clearance successfully.');
+      setTimeout(() => setSuccessMsg(''), 3000);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || 'Error removing clearance');
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string, productName: string) => {
+    if (!confirm(`Are you sure you want to permanently delete "${productName}" from the store?`)) return;
+    try {
+      const res = await fetch(`/api/products/${productId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete product');
+      }
+      setSuccessMsg(`Product "${productName}" deleted from inventory.`);
+      setTimeout(() => setSuccessMsg(''), 3000);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || 'Error deleting product');
+    }
+  };
 
   const handleOpenDiscountModal = (item: any) => {
     setDiscountModalItem(item);
@@ -215,15 +249,41 @@ export default function ClearancePage() {
                             {formatNaira(suggested20)} (-20%)
                           </td>
                           <td className="py-3 px-4 text-center">
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => handleOpenDiscountModal(item)}
-                              className="text-xs h-7 px-3 gap-1"
-                            >
-                              <Percent className="w-3.5 h-3.5" />
-                              <span>Apply Discount</span>
-                            </Button>
+                            <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                              {item.status === 'CLEARANCE' ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRemoveClearance(item.id)}
+                                  className="text-xs h-7 px-2.5 gap-1 text-[#16803C] hover:bg-[#EAF7EE]"
+                                  title="Revert back to regular catalog"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                  <span>Remove Clearance</span>
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleOpenDiscountModal(item)}
+                                  className="text-xs h-7 px-3 gap-1"
+                                >
+                                  <Percent className="w-3.5 h-3.5" />
+                                  <span>Apply Discount</span>
+                                </Button>
+                              )}
+                              {currentUser?.role === 'OWNER' && (
+                                <Button
+                                  variant="danger"
+                                  size="sm"
+                                  onClick={() => handleDeleteProduct(item.id, item.name)}
+                                  className="text-xs h-7 px-2"
+                                  title="Delete Product from Shop"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );

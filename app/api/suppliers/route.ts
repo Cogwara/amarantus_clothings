@@ -69,3 +69,47 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to create supplier' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'OWNER') {
+      return NextResponse.json({ error: 'Only owners can delete suppliers' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'Supplier ID is required' }, { status: 400 });
+    }
+
+    const supRes = await query(`SELECT * FROM suppliers WHERE id = $1`, [id]);
+    if (supRes.rows.length === 0) {
+      return NextResponse.json({ error: 'Supplier not found' }, { status: 404 });
+    }
+    const supplier = supRes.rows[0];
+
+    await query(`UPDATE purchase_batches SET "supplierId" = NULL WHERE "supplierId" = $1`, [id]);
+    await query(`DELETE FROM suppliers WHERE id = $1`, [id]);
+
+    await logAudit({
+      userId: user.id,
+      action: 'DELETE_SUPPLIER',
+      entity: 'Supplier',
+      entityId: id,
+      description: `Owner deleted supplier "${supplier.name}" (${supplier.market})`,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Supplier "${supplier.name}" deleted successfully.`,
+    });
+  } catch (error: any) {
+    console.error('Error deleting supplier:', error);
+    return NextResponse.json(
+      { error: error?.message || 'Failed to delete supplier' },
+      { status: 500 }
+    );
+  }
+}
+

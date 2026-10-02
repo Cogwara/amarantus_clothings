@@ -15,6 +15,7 @@ import {
   Sparkles,
   ExternalLink,
   Tag,
+  Trash2,
 } from 'lucide-react';
 import { formatNaira, generateSocialCaptions } from '@/lib/calculations';
 import { Product } from '@/lib/types';
@@ -111,6 +112,18 @@ export default function SocialSellingPage() {
       }
     } finally {
       setSavingPost(false);
+    }
+  };
+
+  const handleDeletePost = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this prepared social post?')) return;
+    try {
+      const res = await fetch(`/api/social-posts?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setPosts((prev) => prev.filter((p) => p.id !== id));
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -327,19 +340,32 @@ export default function SocialSellingPage() {
                             {post.caption}
                           </p>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs h-7 shrink-0"
-                          onClick={() =>
-                            handleCopy(
-                              post.caption,
-                              post.platform === 'WHATSAPP' ? 'wa' : 'ig'
-                            )
-                          }
-                        >
-                          Copy
-                        </Button>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-7"
+                            onClick={() =>
+                              handleCopy(
+                                post.caption,
+                                post.platform === 'WHATSAPP' ? 'wa' : 'ig'
+                              )
+                            }
+                          >
+                            Copy
+                          </Button>
+                          {currentUser?.role === 'OWNER' && (
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              className="text-xs h-7 px-2"
+                              onClick={() => handleDeletePost(post.id)}
+                              title="Delete Social Post"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

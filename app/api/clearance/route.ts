@@ -168,3 +168,77 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'OWNER') {
+      return NextResponse.json(
+        { error: 'Only business owners can remove items from clearance' },
+        { status: 403 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const productId = searchParams.get('productId');
+    if (!productId) {
+      return NextResponse.json({ error: 'Product ID required' }, { status: 400 });
+    }
+
+    const result = await withTransaction(async (client) => {
+      // 1. Revert product status to AVAILABLE
+      const prodRes = await client.query(
+        `UPDATE products 
+         SET status = 'AVAILABLE', "updatedAt" = NOW()
+         WHERE id = $1
+         RETURNING *`,
+        [productId]
+      );
+
+      if (prodRes.rows.length === 0) {
+        throw new Error('Product not found');
+      }
+
+      // 2. Deactivate discounts
+      await client.query(
+        `UPDATE discounts SET "isActive" = false WHERE "productId" = $1`,
+        [productId]
+      );
+
+      // 3. Record stock movement note
+      await client.query(
+        `INSERT INTO stock_movements (id, "productId", type, quantity, notes, "createdById", "createdAt")
+         VALUES ($1, $2, 'ADJUSTMENT', 0, $3, $4, NOW())`,
+        [
+          'mov_' + Math.random().toString(36).substring(2, 9),
+          productId,
+          'Removed from clearance. Restored to regular inventory.',
+          user.id,
+        ]
+      );
+
+      return prodRes.rows[0];
+    });
+
+    await logAudit({
+      userId: user.id,
+      action: 'REMOVE_CLEARANCE',
+      entity: 'Product',
+      entityId: productId,
+      description: `Owner removed ${result.name} from clearance. Status restored to AVAILABLE.`,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Product "${result.name}" removed from clearance.`,
+      product: result,
+    });
+  } catch (error: any) {
+    console.error('Error removing clearance:', error);
+    return NextResponse.json(
+      { error: error?.message || 'Failed to remove clearance' },
+      { status: 500 }
+    );
+  }
+}
+

@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   AlertCircle,
   ArrowRight,
+  RotateCcw,
 } from 'lucide-react';
 import { formatNaira } from '@/lib/calculations';
 import { PlanStatus } from '@/lib/types';
@@ -28,6 +29,7 @@ export default function ThursdayPlanPage() {
   const [status, setStatus] = React.useState<PlanStatus>('READY');
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
+  const [resetting, setResetting] = React.useState(false);
   const [message, setMessage] = React.useState('');
 
   const loadPlan = React.useCallback(async () => {
@@ -52,6 +54,29 @@ export default function ThursdayPlanPage() {
   React.useEffect(() => {
     loadPlan();
   }, [loadPlan]);
+
+  const handleResetPlan = async () => {
+    if (
+      !confirm(
+        'Are you sure you want to clear all custom overrides and reset the Thursday purchasing plan back to automatic calculation defaults?'
+      )
+    ) {
+      return;
+    }
+    setResetting(true);
+    try {
+      const res = await fetch('/api/thursday-plan', { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to reset plan');
+      setMessage('Thursday plan reset to automatic defaults.');
+      setTimeout(() => setMessage(''), 3000);
+      loadPlan();
+    } catch (err: any) {
+      alert(err?.message || 'Error resetting plan');
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const handleUpdateItem = (categoryId: string, field: string, value: any) => {
     setItems((prev) =>
@@ -176,6 +201,19 @@ export default function ThursdayPlanPage() {
                 <CheckCircle2 className="w-4 h-4" />
                 <span>{message}</span>
               </span>
+            )}
+            {currentUser?.role === 'OWNER' && (
+              <Button
+                variant="outline"
+                size="md"
+                onClick={handleResetPlan}
+                disabled={resetting || saving}
+                className="gap-1.5 text-xs text-red-600 hover:bg-red-50 hover:border-red-200"
+                title="Clear custom overrides and recalculate from scratch"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>{resetting ? 'Resetting...' : 'Reset Plan'}</span>
+              </Button>
             )}
             <Button
               variant="primary"

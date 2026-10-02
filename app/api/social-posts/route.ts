@@ -94,3 +94,37 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'Failed to update post' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || user.role === 'STAFF') {
+      return NextResponse.json({ error: 'Unauthorized to delete social posts' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'Post ID is required' }, { status: 400 });
+    }
+
+    const delRes = await query(`DELETE FROM social_posts WHERE id = $1 RETURNING *`, [id]);
+    if (delRes.rows.length === 0) {
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 });
+    }
+
+    await logAudit({
+      userId: user.id,
+      action: 'DELETE_SOCIAL_POST',
+      entity: 'SocialPost',
+      entityId: id,
+      description: `Deleted prepared ${delRes.rows[0].platform} post for product ${delRes.rows[0].productId}`,
+    });
+
+    return NextResponse.json({ success: true, message: 'Social post deleted successfully' });
+  } catch (error: any) {
+    console.error('Error deleting social post:', error);
+    return NextResponse.json({ error: 'Failed to delete social post' }, { status: 500 });
+  }
+}
+

@@ -17,6 +17,8 @@ import {
   History,
   CheckCircle2,
   Lock,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import { formatNaira } from '@/lib/calculations';
 import { User, Role } from '@/lib/types';
@@ -38,6 +40,12 @@ export default function StaffPage() {
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState('');
 
+  // Delete Staff (Owner Only)
+  const [userToDelete, setUserToDelete] = React.useState<any | null>(null);
+  const [deletingUser, setDeletingUser] = React.useState(false);
+  const [deleteUserError, setDeleteUserError] = React.useState('');
+  const [deleteUserSuccess, setDeleteUserSuccess] = React.useState('');
+
   const loadData = React.useCallback(async () => {
     try {
       setLoading(true);
@@ -57,6 +65,27 @@ export default function StaffPage() {
   React.useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    setDeletingUser(true);
+    setDeleteUserError('');
+    try {
+      const res = await fetch(`/api/users?id=${userToDelete.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete staff account');
+      }
+      setUserToDelete(null);
+      setDeleteUserSuccess(`Staff account "${userToDelete.name}" deleted successfully.`);
+      setTimeout(() => setDeleteUserSuccess(''), 4000);
+      loadData();
+    } catch (err: any) {
+      setDeleteUserError(err?.message || 'Error deleting staff account');
+    } finally {
+      setDeletingUser(false);
+    }
+  };
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,6 +218,13 @@ export default function StaffPage() {
           </div>
         )}
 
+        {deleteUserSuccess && (
+          <div className="p-3 bg-[#EAF7EE] border border-[#C5E9CE] rounded-[10px] text-xs font-bold text-[#16803C] flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{deleteUserSuccess}</span>
+          </div>
+        )}
+
         {/* Staff Table */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -259,14 +295,30 @@ export default function StaffPage() {
                         </td>
                         <td className="py-3 px-4 text-center">
                           {u.id !== currentUser?.id ? (
-                            <Button
-                              variant={u.isActive ? 'outline' : 'primary'}
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => handleToggleActive(u)}
-                            >
-                              {u.isActive ? 'Deactivate' : 'Activate'}
-                            </Button>
+                            <div className="flex items-center justify-center gap-1.5">
+                              <Button
+                                variant={u.isActive ? 'outline' : 'primary'}
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={() => handleToggleActive(u)}
+                              >
+                                {u.isActive ? 'Deactivate' : 'Activate'}
+                              </Button>
+                              {currentUser?.role === 'OWNER' && (
+                                <Button
+                                  variant="danger"
+                                  size="sm"
+                                  className="h-7 text-xs px-2"
+                                  onClick={() => {
+                                    setDeleteUserError('');
+                                    setUserToDelete(u);
+                                  }}
+                                  title="Delete Staff Account"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
+                            </div>
                           ) : (
                             <span className="text-[11px] text-[#66736B] italic">
                               Current User
@@ -414,6 +466,76 @@ export default function StaffPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Staff Member Confirmation Modal */}
+      <Modal
+        isOpen={Boolean(userToDelete)}
+        onClose={() => !deletingUser && setUserToDelete(null)}
+        title="Delete Staff Account"
+        maxWidth="md"
+      >
+        {userToDelete && (
+          <div className="p-4 sm:p-6 space-y-4">
+            {deleteUserError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-[10px] text-xs font-bold text-red-600">
+                {deleteUserError}
+              </div>
+            )}
+
+            <div className="flex items-start gap-3 p-3.5 bg-red-50/60 rounded-[12px] border border-red-200/80">
+              <div className="p-2 bg-red-100 rounded-full text-red-600 shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="text-xs text-[#17211B] space-y-1">
+                <p className="font-bold text-red-900">
+                  Are you sure you want to permanently delete this user account?
+                </p>
+                <p className="text-[#66736B]">
+                  Deleting <strong>{userToDelete.name}</strong> ({userToDelete.email}) will revoke all system access. Previous transactions and sales records will be preserved under store records.
+                </p>
+              </div>
+            </div>
+
+            {/* User Profile Card */}
+            <div className="p-3 bg-[#F8FAF9] rounded-[10px] border border-[#DDE5DF] text-xs space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-[#17211B]">{userToDelete.name}</span>
+                <Badge variant={userToDelete.role === 'OWNER' ? 'orange' : 'green'} className="text-[10px]">
+                  {userToDelete.role}
+                </Badge>
+              </div>
+              <p className="text-[11px] text-[#66736B]">
+                {userToDelete.email} {userToDelete.phone ? `• ${userToDelete.phone}` : ''}
+              </p>
+              <p className="text-[10px] text-[#16803C] font-semibold mt-1">
+                {userToDelete.salesCount || 0} sales recorded ({formatNaira(userToDelete.totalSalesHandled || 0)})
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#F0F4F1]">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={() => setUserToDelete(null)}
+                disabled={deletingUser}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                size="md"
+                onClick={handleDeleteUser}
+                disabled={deletingUser}
+                className="font-bold min-w-[120px]"
+              >
+                {deletingUser ? 'Deleting...' : 'Confirm Delete'}
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </AppShell>
   );

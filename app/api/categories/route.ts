@@ -68,3 +68,58 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to create category' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'OWNER') {
+      return NextResponse.json({ error: 'Only owners can delete categories' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'Category ID is required' }, { status: 400 });
+    }
+
+    const catRes = await query(`SELECT * FROM categories WHERE id = $1`, [id]);
+    if (catRes.rows.length === 0) {
+      return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+    }
+    const category = catRes.rows[0];
+
+    const countRes = await query(
+      `SELECT COUNT(*)::int as count FROM products WHERE "categoryId" = $1 AND status != 'INACTIVE'`,
+      [id]
+    );
+    const activeProducts = countRes.rows[0].count;
+
+    if (activeProducts > 0) {
+      await query(`UPDATE categories SET "isActive" = false, "updatedAt" = NOW() WHERE id = $1`, [id]);
+    } else {
+      await query(`DELETE FROM purchasing_plan_items WHERE "categoryId" = $1`, [id]);
+      await query(`DELETE FROM products WHERE "categoryId" = $1 AND status = 'INACTIVE'`, [id]);
+      await query(`DELETE FROM categories WHERE id = $1`, [id]);
+    }
+
+    await logAudit({
+      userId: user.id,
+      action: 'DELETE_CATEGORY',
+      entity: 'Category',
+      entityId: id,
+      description: `Owner deleted category "${category.name}" (Active products: ${activeProducts})`,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Category "${category.name}" deleted successfully.`,
+    });
+  } catch (error: any) {
+    console.error('Error deleting category:', error);
+    return NextResponse.json(
+      { error: error?.message || 'Failed to delete category' },
+      { status: 500 }
+    );
+  }
+}
+

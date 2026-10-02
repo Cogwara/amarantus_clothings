@@ -23,6 +23,7 @@ import {
   Sparkles,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   Tag,
   ArrowRight,
 } from 'lucide-react';
@@ -63,6 +64,12 @@ export default function SalesPage() {
   const [activeTab, setActiveTab] = React.useState<'pos' | 'history'>('pos');
   const [salesHistory, setSalesHistory] = React.useState<any[]>([]);
 
+  // Delete Sale (Owner Only)
+  const [saleToDelete, setSaleToDelete] = React.useState<any | null>(null);
+  const [deletingSale, setDeletingSale] = React.useState(false);
+  const [deleteSaleError, setDeleteSaleError] = React.useState('');
+  const [deleteSaleSuccess, setDeleteSaleSuccess] = React.useState('');
+
   const loadData = React.useCallback(async () => {
     try {
       setLoading(true);
@@ -87,6 +94,27 @@ export default function SalesPage() {
   React.useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleDeleteSale = async () => {
+    if (!saleToDelete) return;
+    setDeletingSale(true);
+    setDeleteSaleError('');
+    try {
+      const res = await fetch(`/api/sales/${saleToDelete.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete sale');
+      }
+      setSaleToDelete(null);
+      setDeleteSaleSuccess(`Sale ${saleToDelete.saleNumber} deleted and stock restored.`);
+      setTimeout(() => setDeleteSaleSuccess(''), 4000);
+      loadData();
+    } catch (err: any) {
+      setDeleteSaleError(err?.message || 'Error deleting sale');
+    } finally {
+      setDeletingSale(false);
+    }
+  };
 
   // Cart operations
   const addToCart = (product: Product) => {
@@ -297,7 +325,14 @@ export default function SalesPage() {
 
         {activeTab === 'history' ? (
           /* Sales History Tab */
-          <Card>
+          <div className="space-y-4">
+            {deleteSaleSuccess && (
+              <div className="p-3 bg-[#EAF7EE] border border-[#C5E9CE] rounded-[10px] text-xs font-bold text-[#16803C] flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{deleteSaleSuccess}</span>
+              </div>
+            )}
+            <Card>
             <CardHeader className="pb-3 flex items-center justify-between">
               <div>
                 <CardTitle>Sales History</CardTitle>
@@ -359,15 +394,31 @@ export default function SalesPage() {
                           {formatNaira(s.totalProfit)}
                         </td>
                         <td className="py-3 px-4 text-center">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs gap-1"
-                            onClick={() => setCompletedSaleId(s.id)}
-                          >
-                            <Receipt className="w-3.5 h-3.5" />
-                            <span>Receipt</span>
-                          </Button>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1"
+                              onClick={() => setCompletedSaleId(s.id)}
+                            >
+                              <Receipt className="w-3.5 h-3.5" />
+                              <span>Receipt</span>
+                            </Button>
+                            {currentUser?.role === 'OWNER' && (
+                              <Button
+                                variant="danger"
+                                size="sm"
+                                className="h-7 text-xs px-2"
+                                onClick={() => {
+                                  setDeleteSaleError('');
+                                  setSaleToDelete(s);
+                                }}
+                                title="Delete Sale & Restore Product Stock"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -376,6 +427,7 @@ export default function SalesPage() {
               </div>
             </CardContent>
           </Card>
+        </div>
         ) : (
           /* Register (POS) Tab */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -743,6 +795,77 @@ export default function SalesPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Sale Confirmation Modal */}
+      <Modal
+        isOpen={Boolean(saleToDelete)}
+        onClose={() => !deletingSale && setSaleToDelete(null)}
+        title="Delete Sale Record"
+        maxWidth="md"
+      >
+        {saleToDelete && (
+          <div className="p-4 sm:p-6 space-y-4">
+            {deleteSaleError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-[10px] text-xs font-bold text-red-600">
+                {deleteSaleError}
+              </div>
+            )}
+
+            <div className="flex items-start gap-3 p-3.5 bg-red-50/60 rounded-[12px] border border-red-200/80">
+              <div className="p-2 bg-red-100 rounded-full text-red-600 shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="text-xs text-[#17211B] space-y-1">
+                <p className="font-bold text-red-900">
+                  Are you sure you want to delete this completed sale?
+                </p>
+                <p className="text-[#66736B]">
+                  Deleting this sale will permanently remove the transaction and <strong>automatically return all sold items back to your inventory stock</strong>.
+                </p>
+              </div>
+            </div>
+
+            {/* Sale Summary Card */}
+            <div className="p-3 bg-[#F8FAF9] rounded-[10px] border border-[#DDE5DF] text-xs space-y-1.5">
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-[#17211B]">{saleToDelete.saleNumber}</span>
+                <span className="font-extrabold text-[#16803C] text-sm">
+                  {formatNaira(saleToDelete.totalAmount)}
+                </span>
+              </div>
+              <div className="flex justify-between text-[#66736B] text-[11px]">
+                <span>Customer: {saleToDelete.customerName || 'Walk-in'}</span>
+                <span>{saleToDelete.itemCount} items • {saleToDelete.paymentMethod}</span>
+              </div>
+              <p className="text-[10px] text-[#66736B]">
+                Date: {new Date(saleToDelete.saleDate).toLocaleString('en-NG')}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#F0F4F1]">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={() => setSaleToDelete(null)}
+                disabled={deletingSale}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                size="md"
+                onClick={handleDeleteSale}
+                disabled={deletingSale}
+                className="font-bold min-w-[120px]"
+              >
+                {deletingSale ? 'Deleting...' : 'Confirm Delete'}
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Printable Receipt Modal */}

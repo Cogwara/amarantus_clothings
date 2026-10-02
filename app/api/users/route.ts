@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { query, withTransaction } from '@/lib/db';
 import { getCurrentUser, hashPassword, logAudit } from '@/lib/auth';
 import { z } from 'zod';
 
@@ -168,3 +168,79 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'OWNER') {
+      return NextResponse.json(
+        { error: 'Only business owners can delete staff accounts' },
+        { status: 403 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    if (id === user.id) {
+      return NextResponse.json(
+        { error: 'You cannot delete your own active owner account' },
+        { status: 400 }
+      );
+    }
+
+    const targetRes = await query(`SELECT * FROM users WHERE id = $1`, [id]);
+    if (targetRes.rows.length === 0) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    const targetUser = targetRes.rows[0];
+
+    // Check if target is another owner
+    if (targetUser.role === 'OWNER') {
+      const ownerCountRes = await query(
+        `SELECT COUNT(*)::int as count FROM users WHERE role = 'OWNER'`
+      );
+      if (ownerCountRes.rows[0].count <= 1) {
+        return NextResponse.json(
+          { error: 'Cannot delete the only shop owner account' },
+          { status: 400 }
+        );
+      }
+    }
+
+    await withTransaction(async (client) => {
+      // Reassign sales, batches, and expenses to current owner to preserve audit history
+      await client.query(`UPDATE sales SET "soldById" = $1 WHERE "soldById" = $2`, [user.id, id]);
+      await client.query(`UPDATE purchase_batches SET "createdById" = $1 WHERE "createdById" = $2`, [user.id, id]);
+      await client.query(`UPDATE expenses SET "createdById" = $1 WHERE "createdById" = $2`, [user.id, id]);
+      await client.query(`UPDATE stock_movements SET "createdById" = $1 WHERE "createdById" = $2`, [user.id, id]);
+      await client.query(`DELETE FROM audit_logs WHERE "userId" = $1`, [id]);
+
+      // Delete user
+      await client.query(`DELETE FROM users WHERE id = $1`, [id]);
+    });
+
+    await logAudit({
+      userId: user.id,
+      action: 'DELETE_STAFF',
+      entity: 'User',
+      entityId: id,
+      description: `Owner deleted staff account for ${targetUser.name} (${targetUser.email}, role: ${targetUser.role})`,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Staff account "${targetUser.name}" deleted successfully.`,
+    });
+  } catch (error: any) {
+    console.error('Error deleting staff account:', error);
+    return NextResponse.json(
+      { error: error?.message || 'Failed to delete staff account' },
+      { status: 500 }
+    );
+  }
+}
+

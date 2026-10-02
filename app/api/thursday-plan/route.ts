@@ -195,3 +195,49 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to save Thursday plan' }, { status: 500 });
   }
 }
+
+export async function DELETE() {
+  try {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'OWNER') {
+      return NextResponse.json(
+        { error: 'Only business owners can reset or clear Thursday purchasing plans' },
+        { status: 403 }
+      );
+    }
+
+    await withTransaction(async (client) => {
+      const planRes = await client.query(
+        `SELECT id FROM purchasing_plans ORDER BY "planDate" DESC LIMIT 1`
+      );
+      if (planRes.rows.length > 0) {
+        const planId = planRes.rows[0].id;
+        await client.query(`DELETE FROM purchasing_plan_items WHERE "planId" = $1`, [planId]);
+        await client.query(
+          `UPDATE purchasing_plans SET status = 'DRAFT', "updatedAt" = NOW() WHERE id = $1`,
+          [planId]
+        );
+      }
+    });
+
+    await logAudit({
+      userId: user.id,
+      action: 'RESET_THURSDAY_PLAN',
+      entity: 'PurchasingPlan',
+      description:
+        'Owner cleared and reset Thursday purchasing plan overrides back to automatic calculation defaults',
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Thursday plan items reset to fresh automatic calculations.',
+    });
+  } catch (error: any) {
+    console.error('Error resetting Thursday plan:', error);
+    return NextResponse.json(
+      { error: error?.message || 'Failed to reset Thursday plan' },
+      { status: 500 }
+    );
+  }
+}
+

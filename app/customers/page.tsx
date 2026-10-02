@@ -19,6 +19,9 @@ import {
   Mail,
   MapPin,
   ExternalLink,
+  Trash2,
+  AlertTriangle,
+  CheckCircle2,
 } from 'lucide-react';
 import { formatNaira } from '@/lib/calculations';
 import { Customer } from '@/lib/types';
@@ -47,6 +50,12 @@ export default function CustomersPage() {
   // Selected receipt
   const [selectedReceiptId, setSelectedReceiptId] = React.useState<string | null>(null);
 
+  // Delete Customer (Owner Only)
+  const [customerToDelete, setCustomerToDelete] = React.useState<Customer | null>(null);
+  const [deletingCustomer, setDeletingCustomer] = React.useState(false);
+  const [deleteCustomerError, setDeleteCustomerError] = React.useState('');
+  const [deleteCustomerSuccess, setDeleteCustomerSuccess] = React.useState('');
+
   const loadData = React.useCallback(async () => {
     try {
       setLoading(true);
@@ -65,6 +74,28 @@ export default function CustomersPage() {
   React.useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleDeleteCustomer = async () => {
+    if (!customerToDelete) return;
+    setDeletingCustomer(true);
+    setDeleteCustomerError('');
+    try {
+      const res = await fetch(`/api/customers/${customerToDelete.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete customer');
+      }
+      setCustomerToDelete(null);
+      setViewingCustomer(null);
+      setDeleteCustomerSuccess(`Customer "${customerToDelete.name}" deleted successfully.`);
+      setTimeout(() => setDeleteCustomerSuccess(''), 4000);
+      loadData();
+    } catch (err: any) {
+      setDeleteCustomerError(err?.message || 'Error deleting customer');
+    } finally {
+      setDeletingCustomer(false);
+    }
+  };
 
   const handleAddCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,6 +194,13 @@ export default function CustomersPage() {
           </Button>
         </div>
 
+        {deleteCustomerSuccess && (
+          <div className="p-3 bg-[#EAF7EE] border border-[#C5E9CE] rounded-[10px] text-xs font-bold text-[#16803C] flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{deleteCustomerSuccess}</span>
+          </div>
+        )}
+
         {/* Customer Cards & Directory */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -202,6 +240,9 @@ export default function CustomersPage() {
                       <th className="py-3 px-3 font-medium text-right">Total Spent</th>
                       <th className="py-3 px-3 font-medium">Last Purchase</th>
                       <th className="py-3 px-4 text-center font-medium">Connect</th>
+                      {currentUser?.role === 'OWNER' && (
+                        <th className="py-3 px-3 text-center font-medium">Action</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#F0F4F1]">
@@ -270,6 +311,22 @@ export default function CustomersPage() {
                               )}
                             </div>
                           </td>
+                          {currentUser?.role === 'OWNER' && (
+                            <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                              <Button
+                                variant="danger"
+                                size="sm"
+                                onClick={() => {
+                                  setDeleteCustomerError('');
+                                  setCustomerToDelete(c);
+                                }}
+                                className="h-7 text-xs px-2"
+                                title="Delete Customer Profile"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
@@ -441,7 +498,110 @@ export default function CustomersPage() {
               </table>
             </div>
           )}
+
+          <div className="flex items-center justify-between pt-3 border-t border-[#F0F4F1]">
+            <div>
+              {currentUser?.role === 'OWNER' && (
+                <Button
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  onClick={() => {
+                    const toDelete = viewingCustomer;
+                    setViewingCustomer(null);
+                    setDeleteCustomerError('');
+                    setCustomerToDelete(toDelete);
+                  }}
+                  className="text-xs font-semibold"
+                >
+                  <Trash2 className="w-4 h-4 mr-1.5" />
+                  <span>Delete Customer</span>
+                </Button>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setViewingCustomer(null)}
+            >
+              Close
+            </Button>
+          </div>
         </div>
+      </Modal>
+
+      {/* Delete Customer Confirmation Modal */}
+      <Modal
+        isOpen={Boolean(customerToDelete)}
+        onClose={() => !deletingCustomer && setCustomerToDelete(null)}
+        title="Delete Customer Profile"
+        maxWidth="md"
+      >
+        {customerToDelete && (
+          <div className="p-4 sm:p-6 space-y-4">
+            {deleteCustomerError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-[10px] text-xs font-bold text-red-600">
+                {deleteCustomerError}
+              </div>
+            )}
+
+            <div className="flex items-start gap-3 p-3.5 bg-red-50/60 rounded-[12px] border border-red-200/80">
+              <div className="p-2 bg-red-100 rounded-full text-red-600 shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="text-xs text-[#17211B] space-y-1">
+                <p className="font-bold text-red-900">
+                  Are you sure you want to delete this customer profile?
+                </p>
+                <p className="text-[#66736B]">
+                  Deleting <strong>{customerToDelete.name}</strong> will remove their profile and WhatsApp history. Past transactions and sales receipts will remain intact.
+                </p>
+              </div>
+            </div>
+
+            {/* Customer Summary Card */}
+            <div className="p-3 bg-[#F8FAF9] rounded-[10px] border border-[#DDE5DF] text-xs space-y-1.5">
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-[#17211B]">{customerToDelete.name}</span>
+                <span className="font-extrabold text-[#16803C] text-sm">
+                  {formatNaira(customerToDelete.totalSpent || 0)}
+                </span>
+              </div>
+              <div className="flex justify-between text-[#66736B] text-[11px]">
+                <span>Phone: {customerToDelete.phone || 'No phone'}</span>
+                <span>{customerToDelete.totalPurchases || 0} completed orders</span>
+              </div>
+              {customerToDelete.address && (
+                <p className="text-[10px] text-[#66736B]">
+                  Address: {customerToDelete.address}
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#F0F4F1]">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={() => setCustomerToDelete(null)}
+                disabled={deletingCustomer}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                size="md"
+                onClick={handleDeleteCustomer}
+                disabled={deletingCustomer}
+                className="font-bold min-w-[120px]"
+              >
+                {deletingCustomer ? 'Deleting...' : 'Confirm Delete'}
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Printable Receipt Modal */}

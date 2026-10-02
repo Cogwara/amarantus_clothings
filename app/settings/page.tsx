@@ -18,6 +18,10 @@ import {
   ShieldAlert,
   Sparkles,
   ExternalLink,
+  Plus,
+  Trash2,
+  Tag,
+  Truck,
 } from 'lucide-react';
 import { Shop } from '@/lib/types';
 
@@ -39,12 +43,27 @@ export default function SettingsPage() {
   const [resettingDemo, setResettingDemo] = React.useState(false);
   const [demoMessage, setDemoMessage] = React.useState('');
 
+  // Categories & Suppliers Management (Owner Deletable)
+  const [categories, setCategories] = React.useState<any[]>([]);
+  const [suppliers, setSuppliers] = React.useState<any[]>([]);
+  const [newCatName, setNewCatName] = React.useState('');
+  const [newCatDesc, setNewCatDesc] = React.useState('');
+  const [addingCat, setAddingCat] = React.useState(false);
+
+  const [newSupName, setNewSupName] = React.useState('');
+  const [newSupPhone, setNewSupPhone] = React.useState('');
+  const [newSupMarket, setNewSupMarket] = React.useState('Amarantus Clothings');
+  const [addingSup, setAddingSup] = React.useState(false);
+  const [configMessage, setConfigMessage] = React.useState('');
+
   const loadData = React.useCallback(async () => {
     try {
       setLoading(true);
-      const [uRes, sRes] = await Promise.all([
+      const [uRes, sRes, catRes, supRes] = await Promise.all([
         fetch('/api/auth/me').then((r) => (r.ok ? r.json() : null)),
         fetch('/api/settings').then((r) => (r.ok ? r.json() : null)),
+        fetch('/api/categories').then((r) => (r.ok ? r.json() : null)),
+        fetch('/api/suppliers').then((r) => (r.ok ? r.json() : null)),
       ]);
 
       if (uRes?.user) setCurrentUser(uRes.user);
@@ -56,6 +75,8 @@ export default function SettingsPage() {
         setCurrency(sRes.shop.currency || 'NGN');
       }
       if (sRes?.stats) setStats(sRes.stats);
+      if (catRes?.categories) setCategories(catRes.categories);
+      if (supRes?.suppliers) setSuppliers(supRes.suppliers);
     } finally {
       setLoading(false);
     }
@@ -64,6 +85,82 @@ export default function SettingsPage() {
   React.useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCatName.trim()) return;
+    setAddingCat(true);
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCatName.trim(), description: newCatDesc.trim() || null }),
+      });
+      if (res.ok) {
+        setNewCatName('');
+        setNewCatDesc('');
+        setConfigMessage('Category added successfully');
+        setTimeout(() => setConfigMessage(''), 3000);
+        loadData();
+      }
+    } finally {
+      setAddingCat(false);
+    }
+  };
+
+  const handleDeleteCategory = async (id: string, catName: string) => {
+    if (!confirm(`Are you sure you want to delete category "${catName}"?`)) return;
+    try {
+      const res = await fetch(`/api/categories?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete category');
+      setConfigMessage(data.message || 'Category deleted');
+      setTimeout(() => setConfigMessage(''), 3000);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || 'Error deleting category');
+    }
+  };
+
+  const handleAddSupplier = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSupName.trim()) return;
+    setAddingSup(true);
+    try {
+      const res = await fetch('/api/suppliers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newSupName.trim(),
+          phone: newSupPhone.trim() || null,
+          market: newSupMarket.trim() || 'Amarantus Clothings',
+        }),
+      });
+      if (res.ok) {
+        setNewSupName('');
+        setNewSupPhone('');
+        setConfigMessage('Supplier added successfully');
+        setTimeout(() => setConfigMessage(''), 3000);
+        loadData();
+      }
+    } finally {
+      setAddingSup(false);
+    }
+  };
+
+  const handleDeleteSupplier = async (id: string, supName: string) => {
+    if (!confirm(`Are you sure you want to delete supplier "${supName}"?`)) return;
+    try {
+      const res = await fetch(`/api/suppliers?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete supplier');
+      setConfigMessage(data.message || 'Supplier deleted');
+      setTimeout(() => setConfigMessage(''), 3000);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || 'Error deleting supplier');
+    }
+  };
 
   const handleSaveShopProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,6 +336,142 @@ export default function SettingsPage() {
             </Link>
           </CardContent>
         </Card>
+
+        {/* Categories & Suppliers Management (Owner Deletable) */}
+        {configMessage && (
+          <div className="p-3 rounded-[10px] bg-[#EAF7EE] border border-[#C5E9CE] text-xs font-bold text-[#16803C] flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{configMessage}</span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Categories Card */}
+          <Card>
+            <CardHeader className="pb-3 border-b border-[#F0F4F1] flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Tag className="w-4 h-4 text-[#16803C]" />
+                <CardTitle className="text-sm">Clothing Categories ({categories.length})</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+              {currentUser?.role === 'OWNER' && (
+                <form onSubmit={handleAddCategory} className="flex gap-2">
+                  <Input
+                    placeholder="New category name..."
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    className="h-8 text-xs flex-1"
+                    required
+                  />
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="sm"
+                    isLoading={addingCat}
+                    className="h-8 text-xs shrink-0 font-bold"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    <span>Add</span>
+                  </Button>
+                </form>
+              )}
+
+              <div className="divide-y divide-[#F0F4F1] max-h-56 overflow-y-auto pr-1">
+                {categories.length === 0 ? (
+                  <p className="text-xs text-[#66736B] py-3 text-center">No categories recorded.</p>
+                ) : (
+                  categories.map((c) => (
+                    <div key={c.id} className="py-2 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-semibold text-[#17211B]">{c.name}</span>
+                        <span className="text-[10px] text-[#66736B] ml-1.5">
+                          ({c.productCount || 0} active pieces)
+                        </span>
+                      </div>
+                      {currentUser?.role === 'OWNER' && (
+                        <button
+                          onClick={() => handleDeleteCategory(c.id, c.name)}
+                          className="p-1 rounded text-red-500 hover:bg-red-50 transition-colors"
+                          title="Delete Category"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Suppliers Card */}
+          <Card>
+            <CardHeader className="pb-3 border-b border-[#F0F4F1] flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Truck className="w-4 h-4 text-[#16803C]" />
+                <CardTitle className="text-sm">Market Suppliers ({suppliers.length})</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+              {currentUser?.role === 'OWNER' && (
+                <form onSubmit={handleAddSupplier} className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Supplier name..."
+                      value={newSupName}
+                      onChange={(e) => setNewSupName(e.target.value)}
+                      className="h-8 text-xs flex-1"
+                      required
+                    />
+                    <Input
+                      placeholder="Market center..."
+                      value={newSupMarket}
+                      onChange={(e) => setNewSupMarket(e.target.value)}
+                      className="h-8 text-xs flex-1"
+                    />
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="sm"
+                      isLoading={addingSup}
+                      className="h-8 text-xs shrink-0 font-bold"
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1" />
+                      <span>Add</span>
+                    </Button>
+                  </div>
+                </form>
+              )}
+
+              <div className="divide-y divide-[#F0F4F1] max-h-56 overflow-y-auto pr-1">
+                {suppliers.length === 0 ? (
+                  <p className="text-xs text-[#66736B] py-3 text-center">No suppliers recorded.</p>
+                ) : (
+                  suppliers.map((s) => (
+                    <div key={s.id} className="py-2 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-semibold text-[#17211B]">{s.name}</span>
+                        <span className="text-[10px] text-[#66736B] ml-1.5">
+                          • {s.market} ({s.batchCount || 0} batches)
+                        </span>
+                      </div>
+                      {currentUser?.role === 'OWNER' && (
+                        <button
+                          onClick={() => handleDeleteSupplier(s.id, s.name)}
+                          className="p-1 rounded text-red-500 hover:bg-red-50 transition-colors"
+                          title="Delete Supplier"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Database & Demo Data Management */}
         <Card className="border-[#FCD9B8]">
