@@ -25,6 +25,8 @@ import {
   Pencil,
   Image as ImageIcon,
   ZoomIn,
+  Trash2,
+  CheckCircle2,
 } from 'lucide-react';
 import { ImageLightbox } from '@/components/ui/image-lightbox';
 import { formatNaira, calculateMarginPercentage } from '@/lib/calculations';
@@ -35,6 +37,14 @@ export default function InventoryPage() {
   const [products, setProducts] = React.useState<Product[]>([]);
   const [categories, setCategories] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
+
+  // Delete product states (Owners only)
+  const [productToDelete, setProductToDelete] = React.useState<Product | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
+  const [deleteError, setDeleteError] = React.useState('');
+  const [deleteSuccess, setDeleteSuccess] = React.useState('');
+
+  const isOwner = currentUser?.role === 'OWNER';
 
   // Lightbox Zoom Viewer state
   const [lightboxData, setLightboxData] = React.useState<{
@@ -142,6 +152,30 @@ export default function InventoryPage() {
   React.useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Delete product (Owner only)
+  const handleDeleteProduct = async () => {
+    if (!productToDelete) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      const res = await fetch(`/api/products/${productToDelete.id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete product');
+      }
+      setDeleteSuccess(`"${productToDelete.name}" successfully deleted from inventory!`);
+      setTimeout(() => setDeleteSuccess(''), 4000);
+      setProductToDelete(null);
+      loadData();
+    } catch (err: any) {
+      setDeleteError(err.message || 'Error deleting product');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Open movement history
   const handleOpenHistory = async (prod: Product) => {
@@ -375,6 +409,14 @@ export default function InventoryPage() {
       subtitle="Complete stock monitoring, product details and movement audit"
     >
       <div className="space-y-5">
+        {/* Delete Success Alert */}
+        {deleteSuccess && (
+          <div className="p-3.5 bg-[#EAF7EE] border border-[#C5E9CE] rounded-[10px] flex items-center gap-2 text-xs font-bold text-[#16803C] animate-fadeIn shadow-xs">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{deleteSuccess}</span>
+          </div>
+        )}
+
         {/* Header Actions & Search Toolbar */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-[12px] border border-[#DDE5DF] shadow-sm">
           <div className="flex items-center gap-2 flex-1 max-w-md">
@@ -598,7 +640,7 @@ export default function InventoryPage() {
                     </button>
 
                     {currentUser?.role !== 'STAFF' && (
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <Button
                           variant="outline"
                           size="sm"
@@ -621,8 +663,20 @@ export default function InventoryPage() {
                           className="text-xs h-7 px-2.5"
                         >
                           <ArrowUpDown className="w-3.5 h-3.5 mr-1" />
-                          <span>Adjust Stock</span>
+                          <span>Adjust</span>
                         </Button>
+                        {isOwner && (
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => setProductToDelete(p)}
+                            className="text-xs h-7 px-2"
+                            title="Delete Product from Inventory"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-1" />
+                            <span>Delete</span>
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -727,6 +781,16 @@ export default function InventoryPage() {
                                 >
                                   <ArrowUpDown className="w-4 h-4" />
                                 </button>
+                                {isOwner && (
+                                  <button
+                                    onClick={() => setProductToDelete(p)}
+                                    className="p-1 rounded text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                                    title="Delete Product"
+                                    aria-label="Delete Product"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
                               </>
                             )}
                           </div>
@@ -1067,23 +1131,44 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#F0F4F1]">
-            <Button
-              type="button"
-              variant="outline"
-              size="md"
-              onClick={() => setEditModalProduct(null)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              size="md"
-              isLoading={submittingEdit}
-            >
-              Save Changes
-            </Button>
+          <div className="flex items-center justify-between pt-3 border-t border-[#F0F4F1]">
+            <div>
+              {isOwner && (
+                <Button
+                  type="button"
+                  variant="danger"
+                  size="md"
+                  onClick={() => {
+                    const toDelete = editModalProduct;
+                    setEditModalProduct(null);
+                    setProductToDelete(toDelete);
+                  }}
+                  className="text-xs font-semibold"
+                >
+                  <Trash2 className="w-4 h-4 mr-1.5" />
+                  <span>Delete Product</span>
+                </Button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={() => setEditModalProduct(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                isLoading={submittingEdit}
+              >
+                Save Changes
+              </Button>
+            </div>
           </div>
         </form>
       </Modal>
@@ -1229,6 +1314,86 @@ export default function InventoryPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </Modal>
+
+      {/* Delete Product Confirmation Modal */}
+      <Modal
+        isOpen={Boolean(productToDelete)}
+        onClose={() => !deleting && setProductToDelete(null)}
+        title="Delete Inventory Product"
+        maxWidth="md"
+      >
+        {productToDelete && (
+          <div className="p-4 sm:p-6 space-y-4">
+            {deleteError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-[10px] text-xs font-bold text-red-600">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="flex items-start gap-3 p-3.5 bg-red-50/60 rounded-[12px] border border-red-200/80">
+              <div className="p-2 bg-red-100 rounded-full text-red-600 shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="text-xs text-[#17211B] space-y-1">
+                <p className="font-bold text-red-900">
+                  Are you sure you want to delete this piece?
+                </p>
+                <p className="text-[#66736B]">
+                  This will remove <strong className="text-[#17211B]">{productToDelete.name}</strong> ({productToDelete.sku}) from the storefront and shop inventory.
+                </p>
+              </div>
+            </div>
+
+            {/* Product Summary Card */}
+            <div className="flex items-center gap-3 p-3 bg-[#F8FAF9] rounded-[10px] border border-[#DDE5DF]">
+              <div className="w-12 h-12 rounded-[8px] bg-white border border-[#DDE5DF] overflow-hidden shrink-0">
+                {productToDelete.primaryImageUrl ? (
+                  <img
+                    src={productToDelete.primaryImageUrl}
+                    alt={productToDelete.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center font-bold text-xs text-gray-300">
+                    CS
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-[#17211B] truncate">{productToDelete.name}</p>
+                <p className="text-[11px] text-[#66736B]">
+                  SKU: {productToDelete.sku} • Grade: {productToDelete.condition} • Size: {productToDelete.size}
+                </p>
+                <p className="text-xs font-extrabold text-[#16803C] mt-0.5">
+                  {formatNaira(productToDelete.sellingPrice)} ({productToDelete.quantity} in stock)
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#F0F4F1]">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={() => setProductToDelete(null)}
+                disabled={deleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                size="md"
+                onClick={handleDeleteProduct}
+                disabled={deleting}
+                className="font-bold min-w-[120px]"
+              >
+                {deleting ? 'Deleting...' : 'Confirm Delete'}
+              </Button>
+            </div>
           </div>
         )}
       </Modal>

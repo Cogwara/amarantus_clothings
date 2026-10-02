@@ -181,35 +181,59 @@ export async function DELETE(
     const { id } = await params;
     const user = await getCurrentUser();
     if (!user || user.role !== 'OWNER') {
-      return NextResponse.json({ error: 'Only shop owners can remove products' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Only shop owners have permission to delete inventory products' },
+        { status: 403 }
+      );
     }
 
-    // Soft delete: set status to INACTIVE
-    const res = await query(
-      `
-      UPDATE products
-      SET status = 'INACTIVE', "updatedAt" = NOW()
-      WHERE id = $1
-      RETURNING *
-    `,
-      [id]
-    );
-
-    if (res.rows.length === 0) {
+    // Check if product exists
+    const prodRes = await query('SELECT * FROM products WHERE id = $1', [id]);
+    if (prodRes.rows.length === 0) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+    const product = prodRes.rows[0];
+
+    // Check if referenced in sales or purchase receipts
+    const salesCheck = await query('SELECT COUNT(*) FROM sale_items WHERE "productId" = $1', [id]);
+    const purchasesCheck = await query('SELECT COUNT(*) FROM purchase_items WHERE "productId" = $1', [id]);
+    const hasSales = parseInt(salesCheck.rows[0]?.count || '0') > 0;
+    const hasPurchases = parseInt(purchasesCheck.rows[0]?.count || '0') > 0;
+
+    if (!hasSales && !hasPurchases) {
+      // Safe to permanently remove product and related child records
+      await query('DELETE FROM product_images WHERE "productId" = $1', [id]);
+      await query('DELETE FROM stock_movements WHERE "productId" = $1', [id]);
+      await query('DELETE FROM discounts WHERE "productId" = $1', [id]);
+      await query('DELETE FROM social_posts WHERE "productId" = $1', [id]);
+      await query('DELETE FROM products WHERE id = $1', [id]);
+    } else {
+      // Has historical accounting/sale records: archive as INACTIVE so history is preserved
+      await query(
+        `UPDATE products 
+         SET status = 'INACTIVE', quantity = 0, "updatedAt" = NOW() 
+         WHERE id = $1`,
+        [id]
+      );
     }
 
     await logAudit({
       userId: user.id,
-      action: 'DEACTIVATE_PRODUCT',
+      action: 'DELETE_PRODUCT',
       entity: 'Product',
       entityId: id,
-      description: `Deactivated product ${res.rows[0].name} (SKU: ${res.rows[0].sku})`,
+      description: `Owner ${user.name} deleted product "${product.name}" (SKU: ${product.sku}) from inventory`,
     });
 
-    return NextResponse.json({ success: true, message: 'Product deactivated' });
+    return NextResponse.json({
+      success: true,
+      message: `Product "${product.name}" successfully deleted from inventory`,
+    });
   } catch (error: any) {
     console.error('Error deleting product:', error);
-    return NextResponse.json({ error: 'Failed to inactivate product' }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || 'Failed to delete product' },
+      { status: 500 }
+    );
   }
 }

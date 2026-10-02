@@ -14,10 +14,13 @@ async function ensureTableAndSeed() {
       bg_gradient VARCHAR(255) DEFAULT 'emerald',
       display_order INT DEFAULT 0,
       is_active BOOLEAN DEFAULT true,
+      image_layout VARCHAR(50) DEFAULT 'full',
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
   `);
+
+  await query(`ALTER TABLE hero_slides ADD COLUMN IF NOT EXISTS image_layout VARCHAR(50) DEFAULT 'full';`);
 
   const count = await query('SELECT COUNT(*) FROM hero_slides');
   if (parseInt(count.rows[0].count) === 0) {

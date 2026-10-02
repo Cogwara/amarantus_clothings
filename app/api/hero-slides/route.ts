@@ -23,6 +23,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    await query(`ALTER TABLE hero_slides ADD COLUMN IF NOT EXISTS image_layout VARCHAR(50) DEFAULT 'full';`);
+
     const res = await query(`
       SELECT 
         id,
