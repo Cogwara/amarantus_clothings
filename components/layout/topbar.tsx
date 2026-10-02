@@ -101,7 +101,7 @@ export function Topbar({
                 Good day 👋
               </span>
               <span className="text-xs text-[#66736B] hidden sm:inline">
-                • Elegance Thrift Haven
+                • Amarantus Clothings
               </span>
             </div>
           )}

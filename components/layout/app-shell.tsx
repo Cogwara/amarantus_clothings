@@ -8,6 +8,7 @@ import { Topbar } from './topbar';
 import { BottomNav } from './bottom-nav';
 import { User, Role } from '@/lib/types';
 import { X, Sparkles, ShoppingBag, ExternalLink } from 'lucide-react';
+import { Logo } from '@/components/ui/logo';
 
 interface AppShellProps {
   user: User | null;
@@ -60,17 +61,7 @@ export function AppShell({
           <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col z-10 animate-slideRight">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-[#F0F4F1]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-[8px] bg-[#16803C] text-white flex items-center justify-center font-bold text-sm">
-                  AC
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-[#17211B]">
-                    Amarantus Clothings
-                  </h3>
-                  <p className="text-[11px] text-[#66736B]">Amarantus Clothings</p>
-                </div>
-              </div>
+              <Logo size="sm" subtitle="MANAGER" href="/dashboard" />
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-1 rounded-full text-[#66736B] hover:bg-[#F8FAF9]"

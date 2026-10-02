@@ -48,6 +48,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
+import { Logo } from '@/components/ui/logo';
+import { InstallAppButton } from '@/components/pwa/pwa-install';
 
 interface CartItem {
   product: Product;
@@ -482,17 +484,12 @@ export default function FrontShopPage() {
               <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
 
-            <Link href="/" className="flex items-center gap-1.5 shrink-0 group">
-              <span className="text-lg sm:text-2xl lg:text-3xl font-black tracking-tight text-[#17211B]">
-                AMARANTUS
-              </span>
-              <span className="hidden xs:inline text-lg sm:text-2xl lg:text-3xl font-black tracking-tight text-[#16803C]">
-                CLOTHINGS
-              </span>
-              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#F28C28] flex items-center justify-center text-white text-[10px] sm:text-xs font-black shadow-sm group-hover:scale-110 transition-transform">
-                ★
-              </div>
-            </Link>
+            <div className="hidden xs:block">
+              <Logo size="md" />
+            </div>
+            <div className="xs:hidden">
+              <Logo size="sm" />
+            </div>
           </div>
 
           {/* Centered Search Bar with attached Orange Button (Desktop) */}
@@ -561,6 +558,9 @@ export default function FrontShopPage() {
               <Share2 className="w-4 h-4 text-[#16803C]" />
               <span className="hidden sm:inline">Share</span>
             </button>
+
+            {/* Install PWA App */}
+            <InstallAppButton className="hidden sm:inline-flex" />
 
             {/* Account Dropdown (Desktop & Tablet) */}
             <div className="relative hidden sm:block" onClick={(e) => e.stopPropagation()}>
@@ -2157,17 +2157,7 @@ export default function FrontShopPage() {
           <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col z-10 animate-slideRight">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-[#F0F4F1] bg-[#F8FAF9]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-[10px] bg-[#16803C] text-white flex items-center justify-center font-black text-sm shadow-sm">
-                  AC
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-sm text-[#17211B] leading-tight">
-                    {shop.name}
-                  </h3>
-                  <p className="text-[11px] text-[#16803C] font-semibold">Handpicked UK Thrift</p>
-                </div>
-              </div>
+              <Logo size="sm" />
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-1.5 rounded-full text-[#66736B] hover:bg-white hover:shadow-sm transition-all"
@@ -2179,6 +2169,19 @@ export default function FrontShopPage() {
 
             {/* Quick Actions / Categories inside Drawer */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {/* Install PWA App Card in Mobile Drawer */}
+              <div className="p-3 bg-[#EAF7EE] rounded-[12px] border border-[#C5E9CE] flex items-center justify-between gap-2 shadow-sm">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-[8px] bg-[#16803C] p-0.5 shrink-0 overflow-hidden shadow-xs">
+                    <img src="/icon-192.png" alt="Amarantus" className="w-full h-full object-cover rounded-[6px]" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-[#17211B] leading-tight">Amarantus App</p>
+                    <p className="text-[10px] text-[#16803C] font-semibold">Install to phone screen</p>
+                  </div>
+                </div>
+                <InstallAppButton />
+              </div>
               {/* Category Collections */}
               <div>
                 <p className="text-[10px] font-black uppercase tracking-wider text-[#8A968F] mb-2 px-1">

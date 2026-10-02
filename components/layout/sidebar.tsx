@@ -21,6 +21,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { Role } from '@/lib/types';
+import { Logo } from '@/components/ui/logo';
 
 interface SidebarProps {
   userRole?: Role;
@@ -112,21 +113,11 @@ export function Sidebar({ userRole = 'OWNER' }: SidebarProps) {
   return (
     <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-[#DDE5DF] h-screen sticky top-0 select-none z-30">
       {/* Brand Header */}
-      <div className="flex items-center gap-3 px-6 h-16 border-b border-[#F0F4F1]">
-        <div className="w-10 h-10 rounded-[10px] bg-[#16803C] flex items-center justify-center text-white font-black text-lg shadow-sm">
-          AC
-        </div>
-        <div>
-          <div className="flex items-center gap-1.5">
-            <h1 className="font-bold text-base text-[#17211B] leading-none">
-              Amarantus Clothings
-            </h1>
-            <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#FFF1E2] text-[#D96F0B]">
-              Manager
-            </span>
-          </div>
-          <p className="text-[11px] text-[#66736B] mt-0.5">Amarantus Clothings</p>
-        </div>
+      <div className="flex items-center justify-between px-5 h-16 border-b border-[#F0F4F1]">
+        <Logo size="sm" subtitle="MANAGER" href="/dashboard" />
+        <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#FFF1E2] text-[#D96F0B]">
+          Admin
+        </span>
       </div>
 
       {/* Front Shop Link */}

@@ -82,10 +82,11 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Amarantus Clothings',
+    title: 'Amarantus',
   },
   formatDetection: {
     telephone: true,
@@ -94,11 +95,16 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.ico' },
-      { url: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
     ],
     shortcut: '/favicon.ico',
-    apple: '/favicon.ico',
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
   },
 };
 
@@ -110,6 +116,8 @@ export const viewport: Viewport = {
   themeColor: '#16803C',
 };
 
+import { PwaRegister } from '@/components/pwa/pwa-install';
+
 export default function RootLayout({
   children,
 }: {
@@ -119,6 +127,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full bg-[#F8FAF9] text-[#17211B] font-sans">
         {children}
+        <PwaRegister />
       </body>
     </html>
   );
