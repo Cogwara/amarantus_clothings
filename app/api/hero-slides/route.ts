@@ -10,6 +10,7 @@ const slideSchema = z.object({
   buttonText: z.string().default('Shop Now'),
   buttonLink: z.string().min(1, 'Button link is required').default('#catalog'),
   imageUrl: z.string().nullable().optional(),
+  imageLayout: z.string().default('full'),
   bgGradient: z.string().default('emerald'),
   displayOrder: z.number().int().default(0),
   isActive: z.boolean().default(true),
@@ -31,6 +32,7 @@ export async function GET() {
         button_text as "buttonText",
         button_link as "buttonLink",
         image_url as "imageUrl",
+        COALESCE(image_layout, 'full') as "imageLayout",
         bg_gradient as "bgGradient",
         display_order as "displayOrder",
         is_active as "isActive",
@@ -77,11 +79,12 @@ export async function POST(request: Request) {
         button_text,
         button_link,
         image_url,
+        image_layout,
         bg_gradient,
         display_order,
         is_active
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING 
         id,
         title,
@@ -90,6 +93,7 @@ export async function POST(request: Request) {
         button_text as "buttonText",
         button_link as "buttonLink",
         image_url as "imageUrl",
+        COALESCE(image_layout, 'full') as "imageLayout",
         bg_gradient as "bgGradient",
         display_order as "displayOrder",
         is_active as "isActive",
@@ -103,6 +107,7 @@ export async function POST(request: Request) {
         d.buttonText,
         d.buttonLink,
         d.imageUrl || null,
+        d.imageLayout || 'full',
         d.bgGradient,
         d.displayOrder,
         d.isActive,

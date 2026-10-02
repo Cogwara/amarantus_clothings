@@ -18,6 +18,7 @@ const createProductSchema = z.object({
   quantity: z.number().int().min(0, 'Initial quantity cannot be negative'),
   minimumStock: z.number().int().min(0).default(3),
   imageUrl: z.string().optional(),
+  images: z.array(z.string()).optional(),
 });
 
 export async function GET(request: Request) {
@@ -52,6 +53,12 @@ export async function GET(request: Request) {
         p."createdAt",
         p."updatedAt",
         pi.url as "primaryImageUrl",
+        COALESCE(
+          (SELECT json_agg(json_build_object('id', img.id, 'url', img.url, 'isPrimary', img."isPrimary") ORDER BY img."isPrimary" DESC, img."createdAt" ASC)
+           FROM product_images img
+           WHERE img."productId" = p.id),
+          '[]'::json
+        ) as images,
         EXTRACT(DAY FROM NOW() - p."dateAdded")::int as "daysInStock"
       FROM products p
       JOIN categories c ON p."categoryId" = c.id
@@ -184,14 +191,22 @@ export async function POST(request: Request) {
         ]
       );
 
-      // 2. Insert primary image if provided
-      if (data.imageUrl?.trim()) {
+      // 2. Insert primary and gallery images
+      const imagesToInsert: string[] = [];
+      if (Array.isArray(data.images) && data.images.length > 0) {
+        imagesToInsert.push(...data.images.map((u) => u.trim()).filter(Boolean));
+      } else if (data.imageUrl?.trim()) {
+        imagesToInsert.push(data.imageUrl.trim());
+      }
+
+      for (let i = 0; i < imagesToInsert.length; i++) {
+        const isPrimary = i === 0;
         await client.query(
           `
           INSERT INTO product_images (id, "productId", url, "isPrimary", "createdAt")
-          VALUES ($1, $2, $3, true, NOW())
+          VALUES ($1, $2, $3, $4, NOW())
         `,
-          ['img_' + Math.random().toString(36).substring(2, 9), productId, data.imageUrl.trim()]
+          ['img_' + Math.random().toString(36).substring(2, 9), productId, imagesToInsert[i], isPrimary]
         );
       }
 

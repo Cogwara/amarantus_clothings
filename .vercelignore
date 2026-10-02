@@ -1,0 +1,13 @@
+# Mobile App & Native Builds
+mobile/
+releases/
+*.apk
+*.aab
+*.keystore
+
+# Scratch and test scripts
+scripts/
+
+# User uploads (served dynamically or in production storage)
+public/uploads/*
+!public/uploads/.gitkeep

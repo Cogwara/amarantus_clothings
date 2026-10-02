@@ -5,6 +5,7 @@ import { AppShell } from '@/components/layout/app-shell';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ImageUpload } from '@/components/ui/image-upload';
 import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -21,6 +22,8 @@ import {
   Layers,
   LayoutGrid,
   List,
+  Pencil,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { formatNaira, calculateMarginPercentage } from '@/lib/calculations';
 import { Product, Condition, ProductStatus, MovementType } from '@/lib/types';
@@ -52,9 +55,25 @@ export default function InventoryPage() {
   const [newProdPrice, setNewProdPrice] = React.useState<number>(7500);
   const [newProdQty, setNewProdQty] = React.useState<number>(5);
   const [newProdMinStock, setNewProdMinStock] = React.useState<number>(2);
-  const [newProdImage, setNewProdImage] = React.useState('');
+  const [newProdImages, setNewProdImages] = React.useState<string[]>([]);
   const [submittingProduct, setSubmittingProduct] = React.useState(false);
   const [productError, setProductError] = React.useState('');
+
+  // Edit Product Modal
+  const [editModalProduct, setEditModalProduct] = React.useState<Product | null>(null);
+  const [editProdName, setEditProdName] = React.useState('');
+  const [editProdCategory, setEditProdCategory] = React.useState('');
+  const [editProdSize, setEditProdSize] = React.useState('M');
+  const [editProdGender, setEditProdGender] = React.useState('UNISEX');
+  const [editProdCondition, setEditProdCondition] = React.useState<Condition>('EXCELLENT');
+  const [editProdBrand, setEditProdBrand] = React.useState('');
+  const [editProdColor, setEditProdColor] = React.useState('');
+  const [editProdCost, setEditProdCost] = React.useState<number>(3000);
+  const [editProdPrice, setEditProdPrice] = React.useState<number>(7500);
+  const [editProdMinStock, setEditProdMinStock] = React.useState<number>(2);
+  const [editProdImages, setEditProdImages] = React.useState<string[]>([]);
+  const [submittingEdit, setSubmittingEdit] = React.useState(false);
+  const [editProductError, setEditProductError] = React.useState('');
 
   // Stock Adjustment Modal
   const [adjustModalProduct, setAdjustModalProduct] = React.useState<Product | null>(null);
@@ -128,7 +147,8 @@ export default function InventoryPage() {
         sellingPrice: Number(newProdPrice),
         quantity: Number(newProdQty),
         minimumStock: Number(newProdMinStock),
-        imageUrl: newProdImage.trim() || undefined,
+        images: newProdImages,
+        imageUrl: newProdImages[0] || undefined,
       };
 
       const res = await fetch('/api/products', {
@@ -157,10 +177,82 @@ export default function InventoryPage() {
     setNewProdSku('');
     setNewProdBrand('');
     setNewProdColor('');
-    setNewProdImage('');
+    setNewProdImages([]);
     setNewProdQty(5);
     setNewProdCost(3000);
     setNewProdPrice(7500);
+  };
+
+  // Open edit product modal
+  const handleOpenEdit = (prod: Product) => {
+    setEditModalProduct(prod);
+    setEditProdName(prod.name);
+    setEditProdCategory(prod.categoryId);
+    setEditProdSize(prod.size);
+    setEditProdGender(prod.gender);
+    setEditProdCondition(prod.condition);
+    setEditProdBrand(prod.brand || '');
+    setEditProdColor(prod.color || '');
+    setEditProdCost(prod.costPrice);
+    setEditProdPrice(prod.sellingPrice);
+    setEditProdMinStock(prod.minimumStock);
+
+    const existingImages: string[] = [];
+    if (prod.images && Array.isArray(prod.images) && prod.images.length > 0) {
+      existingImages.push(...prod.images.map((img: any) => img.url));
+    } else if (prod.primaryImageUrl) {
+      existingImages.push(prod.primaryImageUrl);
+    }
+    setEditProdImages(existingImages);
+    setEditProductError('');
+  };
+
+  // Submit edit product changes
+  const handleUpdateProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editModalProduct) return;
+    if (!editProdName.trim() || !editProdCategory) {
+      setEditProductError('Please fill in product name and select a category.');
+      return;
+    }
+
+    setSubmittingEdit(true);
+    setEditProductError('');
+
+    try {
+      const payload = {
+        name: editProdName.trim(),
+        categoryId: editProdCategory,
+        size: editProdSize,
+        gender: editProdGender,
+        condition: editProdCondition,
+        brand: editProdBrand.trim() || null,
+        color: editProdColor.trim() || null,
+        costPrice: Number(editProdCost),
+        sellingPrice: Number(editProdPrice),
+        minimumStock: Number(editProdMinStock),
+        images: editProdImages,
+        imageUrl: editProdImages[0] || undefined,
+      };
+
+      const res = await fetch(`/api/products/${editModalProduct.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update product');
+      }
+
+      setEditModalProduct(null);
+      loadData();
+    } catch (err: any) {
+      setEditProductError(err?.message || 'Error updating product');
+    } finally {
+      setSubmittingEdit(false);
+    }
   };
 
   // Submit stock adjustment
@@ -399,6 +491,12 @@ export default function InventoryPage() {
                       <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                         {p.condition}
                       </div>
+                      {p.images && p.images.length > 1 && (
+                        <div className="absolute bottom-2 right-2 bg-black/65 backdrop-blur-xs text-white text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                          <ImageIcon className="w-3 h-3 text-white" />
+                          <span>{p.images.length} photos</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Details */}
@@ -454,20 +552,32 @@ export default function InventoryPage() {
                     </button>
 
                     {currentUser?.role !== 'STAFF' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setAdjustModalProduct(p);
-                          setAdjustQuantityChange(0);
-                          setAdjustNotes('');
-                          setAdjustError('');
-                        }}
-                        className="text-xs h-7 px-2.5"
-                      >
-                        <ArrowUpDown className="w-3.5 h-3.5 mr-1" />
-                        <span>Adjust Stock</span>
-                      </Button>
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenEdit(p)}
+                          className="text-xs h-7 px-2"
+                          title="Edit Details & Photo"
+                        >
+                          <Pencil className="w-3.5 h-3.5 mr-1" />
+                          <span>Edit</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setAdjustModalProduct(p);
+                            setAdjustQuantityChange(0);
+                            setAdjustNotes('');
+                            setAdjustError('');
+                          }}
+                          className="text-xs h-7 px-2.5"
+                        >
+                          <ArrowUpDown className="w-3.5 h-3.5 mr-1" />
+                          <span>Adjust Stock</span>
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </Card>
@@ -497,10 +607,30 @@ export default function InventoryPage() {
                     {filteredProducts.map((p) => (
                       <tr key={p.id} className="hover:bg-[#F8FAF9] transition-colors">
                         <td className="py-3 px-4">
-                          <p className="font-bold text-[#17211B]">{p.name}</p>
-                          <p className="text-[10px] text-[#66736B]">
-                            {p.sku} {p.brand ? `• ${p.brand}` : ''}
-                          </p>
+                          <div className="flex items-center gap-2.5">
+                            <div className="relative w-8 h-8 rounded-[6px] overflow-hidden bg-gray-100 border border-[#DDE5DF] shrink-0 flex items-center justify-center">
+                              {p.primaryImageUrl ? (
+                                <img
+                                  src={p.primaryImageUrl}
+                                  alt={p.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-[9px] font-bold text-gray-400">CS</span>
+                              )}
+                              {p.images && p.images.length > 1 && (
+                                <div className="absolute bottom-0 right-0 bg-[#16803C] text-white text-[8px] font-bold px-1 rounded-tl shadow-xs" title={`${p.images.length} photos`}>
+                                  {p.images.length}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-bold text-[#17211B]">{p.name}</p>
+                              <p className="text-[10px] text-[#66736B]">
+                                {p.sku} {p.brand ? `• ${p.brand}` : ''}
+                              </p>
+                            </div>
+                          </div>
                         </td>
                         <td className="py-3 px-3 text-[#17211B]">{p.categoryName}</td>
                         <td className="py-3 px-3 font-semibold">{p.size}</td>
@@ -525,17 +655,27 @@ export default function InventoryPage() {
                               <History className="w-4 h-4" />
                             </button>
                             {currentUser?.role !== 'STAFF' && (
-                              <button
-                                onClick={() => {
-                                  setAdjustModalProduct(p);
-                                  setAdjustQuantityChange(0);
-                                  setAdjustNotes('');
-                                }}
-                                className="p-1 rounded text-[#16803C] hover:bg-[#EAF7EE]"
-                                title="Adjust Stock"
-                              >
-                                <ArrowUpDown className="w-4 h-4" />
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => handleOpenEdit(p)}
+                                  className="p-1 rounded text-[#17211B] hover:bg-[#F0F4F1]"
+                                  title="Edit Product & Photo"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setAdjustModalProduct(p);
+                                    setAdjustQuantityChange(0);
+                                    setAdjustNotes('');
+                                    setAdjustError('');
+                                  }}
+                                  className="p-1 rounded text-[#16803C] hover:bg-[#EAF7EE]"
+                                  title="Adjust Stock"
+                                >
+                                  <ArrowUpDown className="w-4 h-4" />
+                                </button>
+                              </>
                             )}
                           </div>
                         </td>
@@ -696,11 +836,12 @@ export default function InventoryPage() {
             </div>
 
             <div className="sm:col-span-2">
-              <Input
-                label="Product Photo URL (Unsplash or Cloudinary)"
-                placeholder="https://images.unsplash.com/..."
-                value={newProdImage}
-                onChange={(e) => setNewProdImage(e.target.value)}
+              <ImageUpload
+                label="Product Photos (Upload multiple photos from device or enter URLs)"
+                values={newProdImages}
+                onChangeMultiple={(urls) => setNewProdImages(urls)}
+                maxFiles={6}
+                disabled={submittingProduct}
               />
             </div>
           </div>
@@ -721,6 +862,175 @@ export default function InventoryPage() {
               isLoading={submittingProduct}
             >
               Save Product
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Product Modal */}
+      <Modal
+        isOpen={Boolean(editModalProduct)}
+        onClose={() => setEditModalProduct(null)}
+        title={`Edit Product: ${editModalProduct?.name}`}
+        description="Update clothing piece details, pricing, or product photo"
+        maxWidth="lg"
+      >
+        <form onSubmit={handleUpdateProduct} className="space-y-4">
+          {editProductError && (
+            <div className="p-3 rounded-[8px] bg-red-50 border border-red-200 text-xs font-medium text-red-700">
+              {editProductError}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <Input
+                label="Product Name"
+                placeholder="e.g. Floral Chiffon Midi Dress"
+                value={editProdName}
+                onChange={(e) => setEditProdName(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-[#17211B] mb-1.5">
+                Category
+              </label>
+              <select
+                value={editProdCategory}
+                onChange={(e) => setEditProdCategory(e.target.value)}
+                className="w-full rounded-[10px] border border-[#DDE5DF] bg-white px-3.5 py-2.5 text-sm text-[#17211B] focus:border-[#16803C] focus:outline-none"
+                required
+              >
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <Input
+                label="Size"
+                placeholder="e.g. S, M, L, XL, Free Size"
+                value={editProdSize}
+                onChange={(e) => setEditProdSize(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-[#17211B] mb-1.5">
+                Condition
+              </label>
+              <select
+                value={editProdCondition}
+                onChange={(e) => setEditProdCondition(e.target.value as Condition)}
+                className="w-full rounded-[10px] border border-[#DDE5DF] bg-white px-3.5 py-2.5 text-sm text-[#17211B] focus:border-[#16803C] focus:outline-none"
+              >
+                <option value="EXCELLENT">Grade A (Like New / First Selection)</option>
+                <option value="VERY_GOOD">Grade A- (Very Good)</option>
+                <option value="GOOD">Good Condition</option>
+                <option value="FAIR">Fair Condition</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-[#17211B] mb-1.5">
+                Gender / Department
+              </label>
+              <select
+                value={editProdGender}
+                onChange={(e) => setEditProdGender(e.target.value)}
+                className="w-full rounded-[10px] border border-[#DDE5DF] bg-white px-3.5 py-2.5 text-sm text-[#17211B] focus:border-[#16803C] focus:outline-none"
+              >
+                <option value="WOMEN">Women</option>
+                <option value="MEN">Men</option>
+                <option value="UNISEX">Unisex</option>
+                <option value="KIDS">Kids</option>
+              </select>
+            </div>
+
+            <div>
+              <Input
+                label="Brand"
+                placeholder="e.g. Zara, H&M, Vintage"
+                value={editProdBrand}
+                onChange={(e) => setEditProdBrand(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Input
+                label="Color"
+                placeholder="e.g. Navy Blue, Floral Cream"
+                value={editProdColor}
+                onChange={(e) => setEditProdColor(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Input
+                label="Cost Price (₦)"
+                type="number"
+                min="0"
+                step="100"
+                value={editProdCost}
+                onChange={(e) => setEditProdCost(Number(e.target.value))}
+                required
+              />
+            </div>
+
+            <div>
+              <Input
+                label="Selling Price (₦)"
+                type="number"
+                min="0"
+                step="100"
+                value={editProdPrice}
+                onChange={(e) => setEditProdPrice(Number(e.target.value))}
+                required
+              />
+            </div>
+
+            <div>
+              <Input
+                label="Low Stock Alert Threshold"
+                type="number"
+                min="1"
+                value={editProdMinStock}
+                onChange={(e) => setEditProdMinStock(Number(e.target.value))}
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <ImageUpload
+                label="Product Photos (Upload multiple photos from device or enter URLs)"
+                values={editProdImages}
+                onChangeMultiple={(urls) => setEditProdImages(urls)}
+                maxFiles={6}
+                disabled={submittingEdit}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#F0F4F1]">
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              onClick={() => setEditModalProduct(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              isLoading={submittingEdit}
+            >
+              Save Changes
             </Button>
           </div>
         </form>

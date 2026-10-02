@@ -30,7 +30,7 @@ export async function GET(request: Request) {
         p."dateAdded",
         pi.url as "primaryImageUrl",
         COALESCE(
-          (SELECT json_agg(json_build_object('id', img.id, 'url', img.url))
+          (SELECT json_agg(json_build_object('id', img.id, 'url', img.url, 'isPrimary', img."isPrimary") ORDER BY img."isPrimary" DESC, img."createdAt" ASC)
            FROM product_images img
            WHERE img."productId" = p.id),
           '[]'::json

@@ -280,6 +280,7 @@ export interface HeroSlide {
   buttonText: string;
   buttonLink: string;
   imageUrl?: string | null;
+  imageLayout?: 'full' | 'split' | string | null;
   bgGradient: string;
   displayOrder: number;
   isActive: boolean;

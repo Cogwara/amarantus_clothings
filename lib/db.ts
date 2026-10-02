@@ -10,6 +10,9 @@ const connectionString =
   process.env.DATABASE_URL ||
   'postgresql://telecom_admin:telecom_secure_password_2026@localhost:5435/clothshop_db';
 
+const isLocal =
+  connectionString.includes('localhost') || connectionString.includes('127.0.0.1');
+
 export const pool =
   global.__dbPool ||
   new Pool({
@@ -17,6 +20,7 @@ export const pool =
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,
+    ssl: isLocal ? undefined : { rejectUnauthorized: false },
   });
 
 if (process.env.NODE_ENV !== 'production') {

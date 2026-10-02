@@ -93,6 +93,7 @@ export default function HeroSlidesPage() {
   const [formButtonText, setFormButtonText] = React.useState('Shop Now');
   const [formButtonLink, setFormButtonLink] = React.useState('#catalog');
   const [formImageUrl, setFormImageUrl] = React.useState('');
+  const [formImageLayout, setFormImageLayout] = React.useState<'full' | 'split'>('full');
   const [formBgGradient, setFormBgGradient] = React.useState('emerald');
   const [formDisplayOrder, setFormDisplayOrder] = React.useState(1);
   const [formIsActive, setFormIsActive] = React.useState(true);
@@ -135,6 +136,7 @@ export default function HeroSlidesPage() {
     setFormImageUrl(
       'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80'
     );
+    setFormImageLayout('full');
     setFormBgGradient('emerald');
     setFormDisplayOrder(slides.length + 1);
     setFormIsActive(true);
@@ -151,6 +153,7 @@ export default function HeroSlidesPage() {
     setFormButtonText(slide.buttonText || 'Shop Now');
     setFormButtonLink(slide.buttonLink || '#catalog');
     setFormImageUrl(slide.imageUrl || '');
+    setFormImageLayout((slide.imageLayout as 'full' | 'split') || 'full');
     setFormBgGradient(slide.bgGradient || 'emerald');
     setFormDisplayOrder(slide.displayOrder);
     setFormIsActive(slide.isActive);
@@ -181,6 +184,7 @@ export default function HeroSlidesPage() {
         buttonText: formButtonText.trim() || 'Shop Now',
         buttonLink: formButtonLink.trim() || '#catalog',
         imageUrl: formImageUrl.trim() || null,
+        imageLayout: formImageLayout,
         bgGradient: formBgGradient,
         displayOrder: Number(formDisplayOrder) || 0,
         isActive: formIsActive,
@@ -385,12 +389,25 @@ export default function HeroSlidesPage() {
                   GRADIENT_PRESETS.emerald.borderClass
                 }`}
               >
+                {/* 100% Background Image when imageLayout is 'full' or default */}
+                {currentPreview.imageUrl && currentPreview.imageLayout !== 'split' && (
+                  <div className="absolute inset-0 z-0">
+                    <img
+                      src={currentPreview.imageUrl}
+                      alt={currentPreview.title}
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Rich dark gradient overlay ensuring 100% contrast for all text */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/35" />
+                  </div>
+                )}
+
                 {/* Subtle Background Pattern Accent */}
-                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]" />
+                <div className="absolute inset-0 z-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]" />
 
                 <div className="relative z-10 w-full p-4 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
                   {/* Left Content */}
-                  <div className="max-w-md space-y-3 text-center md:text-left">
+                  <div className="max-w-xl space-y-3 text-center md:text-left">
                     {/* Tagline */}
                     {currentPreview.tagline && (
                       <div className="inline-flex items-center gap-1.5 text-xs font-black tracking-wider uppercase text-white/90">
@@ -400,7 +417,7 @@ export default function HeroSlidesPage() {
                     )}
 
                     {/* Headline */}
-                    <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight text-white whitespace-pre-line">
+                    <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight text-white whitespace-pre-line drop-shadow-sm">
                       {currentPreview.title}
                     </h2>
 
@@ -433,16 +450,16 @@ export default function HeroSlidesPage() {
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
                       </a>
 
-                      <span className="text-[11px] bg-black/40 text-white/80 px-2 py-0.5 rounded font-mono">
+                      <span className="text-[11px] bg-black/50 text-white/90 px-2 py-0.5 rounded font-mono">
                         Target: {currentPreview.buttonLink}
                       </span>
                     </div>
                   </div>
 
-                  {/* Right Image Graphic */}
-                  {currentPreview.imageUrl && (
+                  {/* Right Image Graphic (Only when split mode is selected) */}
+                  {currentPreview.imageUrl && currentPreview.imageLayout === 'split' && (
                     <div className="relative w-full md:w-1/2 flex justify-center items-center">
-                      <div className="relative w-56 sm:w-72 aspect-[4/3] rounded-[14px] overflow-hidden shadow-2xl border-4 border-white/20">
+                      <div className="relative w-full max-w-sm sm:max-w-md aspect-[4/3] rounded-[14px] overflow-hidden shadow-2xl border-4 border-white/20">
                         <img
                           src={currentPreview.imageUrl}
                           alt={currentPreview.title}
@@ -790,15 +807,68 @@ export default function HeroSlidesPage() {
           </div>
 
           {/* Slide Fashion Image Upload & URL */}
-          <div className="space-y-2 pt-1 border-t border-[#F0F4F1]">
-            <label className="block text-xs font-bold text-[#17211B]">
-              Promotional Fashion Image (Upload or Paste URL)
-            </label>
-            <ImageUpload
-              label="Promotional Slide Image"
-              value={formImageUrl}
-              onChange={(url) => setFormImageUrl(url)}
-            />
+          <div className="space-y-3 pt-1 border-t border-[#F0F4F1]">
+            <div>
+              <label className="block text-xs font-bold text-[#17211B] mb-1.5">
+                Image Display Mode (100% Full Banner or Split Card)
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFormImageLayout('full')}
+                  className={`p-3 rounded-[10px] border text-left transition-all ${
+                    formImageLayout === 'full'
+                      ? 'border-[#16803C] bg-[#EAF7EE] text-[#16803C] shadow-xs'
+                      : 'border-[#DDE5DF] bg-[#F8FAF9] text-[#17211B] hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="text-xs font-bold flex items-center justify-between">
+                    <span>100% Full Hero Banner</span>
+                    {formImageLayout === 'full' && (
+                      <span className="text-[10px] bg-[#16803C] text-white px-1.5 py-0.5 rounded font-bold">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-[#66736B] mt-1 font-normal">
+                    Image covers 100% of the entire banner with a gradient overlay so headline & buttons pop.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFormImageLayout('split')}
+                  className={`p-3 rounded-[10px] border text-left transition-all ${
+                    formImageLayout === 'split'
+                      ? 'border-[#16803C] bg-[#EAF7EE] text-[#16803C] shadow-xs'
+                      : 'border-[#DDE5DF] bg-[#F8FAF9] text-[#17211B] hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="text-xs font-bold flex items-center justify-between">
+                    <span>Side Column Card</span>
+                    {formImageLayout === 'split' && (
+                      <span className="text-[10px] bg-[#16803C] text-white px-1.5 py-0.5 rounded font-bold">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-[#66736B] mt-1 font-normal">
+                    Image displays as a dedicated high-resolution card next to the headline text.
+                  </p>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#17211B] mb-1">
+                Promotional Fashion Image (Upload or Paste URL)
+              </label>
+              <ImageUpload
+                label="Promotional Slide Image"
+                value={formImageUrl}
+                onChange={(url) => setFormImageUrl(url)}
+              />
+            </div>
           </div>
 
           {/* Status & Display Order */}

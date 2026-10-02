@@ -44,6 +44,7 @@ export async function GET() {
         button_text as "buttonText",
         button_link as "buttonLink",
         image_url as "imageUrl",
+        COALESCE(image_layout, 'full') as "imageLayout",
         bg_gradient as "bgGradient",
         display_order as "displayOrder",
         is_active as "isActive",

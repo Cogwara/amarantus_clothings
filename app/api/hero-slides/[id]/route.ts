@@ -10,6 +10,7 @@ const updateSlideSchema = z.object({
   buttonText: z.string().optional(),
   buttonLink: z.string().min(1, 'Button link is required').optional(),
   imageUrl: z.string().nullable().optional(),
+  imageLayout: z.string().optional(),
   bgGradient: z.string().optional(),
   displayOrder: z.number().int().optional(),
   isActive: z.boolean().optional(),
@@ -36,6 +37,7 @@ export async function GET(
         button_text as "buttonText",
         button_link as "buttonLink",
         image_url as "imageUrl",
+        COALESCE(image_layout, 'full') as "imageLayout",
         bg_gradient as "bgGradient",
         display_order as "displayOrder",
         is_active as "isActive",
@@ -101,6 +103,7 @@ export async function PUT(
         button_text = COALESCE($4, button_text),
         button_link = COALESCE($5, button_link),
         image_url = CASE WHEN $6::text IS NOT NULL OR $13::boolean = true THEN $6 ELSE image_url END,
+        image_layout = COALESCE($14, image_layout),
         bg_gradient = COALESCE($7, bg_gradient),
         display_order = COALESCE($8, display_order),
         is_active = COALESCE($9, is_active),
@@ -114,6 +117,7 @@ export async function PUT(
         button_text as "buttonText",
         button_link as "buttonLink",
         image_url as "imageUrl",
+        COALESCE(image_layout, 'full') as "imageLayout",
         bg_gradient as "bgGradient",
         display_order as "displayOrder",
         is_active as "isActive",
@@ -134,6 +138,7 @@ export async function PUT(
         d.subtitle === null,
         d.tagline === null,
         d.imageUrl === null,
+        d.imageLayout ?? null,
       ]
     );
 

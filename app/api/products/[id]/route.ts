@@ -16,6 +16,7 @@ const updateProductSchema = z.object({
   sellingPrice: z.number().min(0).optional(),
   minimumStock: z.number().int().min(0).optional(),
   imageUrl: z.string().optional(),
+  images: z.array(z.string()).optional(),
 });
 
 export async function GET(
@@ -30,6 +31,12 @@ export async function GET(
         p.*,
         c.name as "categoryName",
         pi.url as "primaryImageUrl",
+        COALESCE(
+          (SELECT json_agg(json_build_object('id', img.id, 'url', img.url, 'isPrimary', img."isPrimary") ORDER BY img."isPrimary" DESC, img."createdAt" ASC)
+           FROM product_images img
+           WHERE img."productId" = p.id),
+          '[]'::json
+        ) as images,
         EXTRACT(DAY FROM NOW() - p."dateAdded")::int as "daysInStock"
       FROM products p
       JOIN categories c ON p."categoryId" = c.id
@@ -125,13 +132,27 @@ export async function PUT(
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    // Update primary image if provided
-    if (data.imageUrl?.trim()) {
+    // Update images if provided
+    if (data.images !== undefined) {
+      await query(`DELETE FROM product_images WHERE "productId" = $1`, [id]);
+      const validImages = data.images.map((u) => u.trim()).filter(Boolean);
+      for (let i = 0; i < validImages.length; i++) {
+        const isPrimary = i === 0;
+        await query(
+          `INSERT INTO product_images (id, "productId", url, "isPrimary", "createdAt")
+           VALUES ($1, $2, $3, $4, NOW())`,
+          ['img_' + Math.random().toString(36).substring(2, 9), id, validImages[i], isPrimary]
+        );
+      }
+    } else if (data.imageUrl !== undefined && data.imageUrl.trim()) {
+      await query(
+        `UPDATE product_images SET "isPrimary" = false WHERE "productId" = $1`,
+        [id]
+      );
       await query(
         `
         INSERT INTO product_images (id, "productId", url, "isPrimary", "createdAt")
         VALUES ($1, $2, $3, true, NOW())
-        ON CONFLICT DO NOTHING
       `,
         ['img_' + Math.random().toString(36).substring(2, 9), id, data.imageUrl.trim()]
       );
