@@ -271,3 +271,18 @@ export interface CartItem {
   discount: number;
   total: number;
 }
+
+export interface HeroSlide {
+  id: string;
+  title: string;
+  subtitle?: string | null;
+  tagline?: string | null;
+  buttonText: string;
+  buttonLink: string;
+  imageUrl?: string | null;
+  bgGradient: string;
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

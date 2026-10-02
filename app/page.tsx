@@ -56,6 +56,48 @@ interface CartItem {
   quantity: number;
 }
 
+const HERO_GRADIENTS: Record<string, { bg: string; border: string; accent: string }> = {
+  emerald: {
+    bg: 'bg-gradient-to-r from-[#07381C] via-[#0D5C2E] to-[#0A4723]',
+    border: 'border-[#16803C]',
+    accent: '#FFDC73',
+  },
+  sunset: {
+    bg: 'bg-gradient-to-r from-[#7C2D12] via-[#B45309] to-[#9A3412]',
+    border: 'border-[#EA580C]',
+    accent: '#FEF08A',
+  },
+  midnight: {
+    bg: 'bg-gradient-to-r from-[#0F172A] via-[#1E3A8A] to-[#172554]',
+    border: 'border-[#2563EB]',
+    accent: '#93C5FD',
+  },
+  ruby: {
+    bg: 'bg-gradient-to-r from-[#881337] via-[#9F1239] to-[#4C0519]',
+    border: 'border-[#E11D48]',
+    accent: '#FECDD3',
+  },
+  royal: {
+    bg: 'bg-gradient-to-r from-[#3B0764] via-[#581C87] to-[#2E1065]',
+    border: 'border-[#9333EA]',
+    accent: '#E9D5FF',
+  },
+};
+
+const DEFAULT_HERO_SLIDES = [
+  {
+    id: 'default-1',
+    title: 'Celebrate Nigeria, Celebrate Savings',
+    subtitle: 'Up to 40% off • UK Grade A Thrift',
+    tagline: '★ • NAIJA WE DEY FOR YOU •',
+    buttonText: 'Shop Now',
+    buttonLink: '#catalog',
+    imageUrl:
+      'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80',
+    bgGradient: 'emerald',
+  },
+];
+
 export default function FrontShopPage() {
   const [products, setProducts] = React.useState<Product[]>([]);
   const [categories, setCategories] = React.useState<any[]>([]);
@@ -79,6 +121,18 @@ export default function FrontShopPage() {
   const [accountDropdownOpen, setAccountDropdownOpen] = React.useState(false);
   const [helpDropdownOpen, setHelpDropdownOpen] = React.useState(false);
   const [heroSlide, setHeroSlide] = React.useState(0);
+  const [heroSlides, setHeroSlides] = React.useState<any[]>([]);
+
+  // Hero carousel auto-advance timer
+  React.useEffect(() => {
+    const total = heroSlides.length > 0 ? heroSlides.length : DEFAULT_HERO_SLIDES.length;
+    if (total <= 1) return;
+    const interval = setInterval(() => {
+      setHeroSlide((prev) => (prev + 1) % total);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [heroSlides.length]);
+
   const [timeLeft, setTimeLeft] = React.useState({
     hours: 4,
     minutes: 22,
@@ -181,11 +235,21 @@ export default function FrontShopPage() {
       if (clearanceOnly) params.append('clearance', 'true');
       if (sortBy) params.append('sort', sortBy);
 
-      const res = await fetch(`/api/public/products?${params.toString()}`);
+      const [res, slidesRes] = await Promise.all([
+        fetch(`/api/public/products?${params.toString()}`),
+        fetch('/api/public/hero-slides').catch(() => null),
+      ]);
       const data = await res.json();
       if (data.products) setProducts(data.products);
       if (data.categories) setCategories(data.categories);
       if (data.shop) setShop(data.shop);
+
+      if (slidesRes && slidesRes.ok) {
+        const slidesData = await slidesRes.json();
+        if (slidesData?.slides && slidesData.slides.length > 0) {
+          setHeroSlides(slidesData.slides);
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -843,80 +907,147 @@ export default function FrontShopPage() {
             </div>
           </aside>
 
-          {/* Hero Promotional Banner (lg:col-span-9) */}
-          <div className="lg:col-span-9 relative rounded-[16px] overflow-hidden bg-gradient-to-r from-[#07381C] via-[#0D5C2E] to-[#0A4723] text-white shadow-xl min-h-[280px] sm:min-h-[380px] flex items-center border border-[#16803C]">
-            {/* Subtle Background Pattern Accent */}
-            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]" />
+          {/* Hero Promotional Banner Carousel (lg:col-span-9) */}
+          {(() => {
+            const activeHeroSlides = heroSlides.length > 0 ? heroSlides : DEFAULT_HERO_SLIDES;
+            const currentSlide = activeHeroSlides[heroSlide % activeHeroSlides.length] || activeHeroSlides[0];
+            const currentTheme = HERO_GRADIENTS[currentSlide.bgGradient] || HERO_GRADIENTS.emerald;
 
-            <div className="relative z-10 w-full p-4 sm:p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
-              {/* Left Content */}
-              <div className="max-w-md space-y-2.5 sm:space-y-4 text-center md:text-left">
-                {/* Tagline */}
-                <div className="inline-flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-sm font-black tracking-wider uppercase text-white/90">
-                  <span className="text-[#F28C28] text-sm sm:text-base">★</span>
-                  <span>• NAIJA WE DEY FOR YOU •</span>
-                </div>
+            return (
+              <div
+                className={`lg:col-span-9 relative rounded-[16px] overflow-hidden ${currentTheme.bg} ${currentTheme.border} text-white shadow-xl min-h-[280px] sm:min-h-[380px] flex items-center border group/hero transition-all duration-700`}
+              >
+                {/* Subtle Background Pattern Accent */}
+                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]" />
 
-                {/* Giant Headline */}
-                <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.15] text-white">
-                  Celebrate Nigeria <br />
-                  <span className="text-[#FFDC73]">Celebrate Savings</span>
-                </h1>
+                {/* Left and Right Slide Arrows */}
+                {activeHeroSlides.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setHeroSlide((prev) =>
+                          prev > 0 ? prev - 1 : activeHeroSlides.length - 1
+                        )
+                      }
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover/hero:opacity-100 transition-opacity shadow-md"
+                      aria-label="Previous Slide"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setHeroSlide((prev) => (prev + 1) % activeHeroSlides.length)
+                      }
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover/hero:opacity-100 transition-opacity shadow-md"
+                      aria-label="Next Slide"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
 
-                {/* Up to 40% Off Pill */}
-                <div className="pt-1">
-                  <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white text-[#17211B] shadow-lg">
-                    <span className="text-sm font-black text-[#16803C]">
-                      Up to <span className="text-base font-extrabold text-[#17211B]">40% off</span>
-                    </span>
-                    <span className="text-xs text-[#66736B] font-medium">• UK Grade A Thrift</span>
+                <div
+                  key={currentSlide.id || heroSlide}
+                  className="relative z-10 w-full p-4 sm:p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 animate-fadeIn"
+                >
+                  {/* Left Content */}
+                  <div className="max-w-md space-y-2.5 sm:space-y-4 text-center md:text-left">
+                    {/* Tagline */}
+                    {currentSlide.tagline && (
+                      <div className="inline-flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-sm font-black tracking-wider uppercase text-white/90">
+                        <span className="text-[#F28C28] text-sm sm:text-base">★</span>
+                        <span>{currentSlide.tagline}</span>
+                      </div>
+                    )}
+
+                    {/* Giant Headline */}
+                    <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.15] text-white whitespace-pre-line">
+                      {currentSlide.title}
+                    </h1>
+
+                    {/* Subtitle / Offer Pill */}
+                    {currentSlide.subtitle && (
+                      <div className="pt-1">
+                        <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white text-[#17211B] shadow-lg">
+                          <span className="text-sm font-black text-[#16803C]">
+                            {currentSlide.subtitle}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* CTA Link */}
+                    <div className="pt-2">
+                      <a
+                        href={currentSlide.buttonLink || '#catalog'}
+                        onClick={(e) => {
+                          if (currentSlide.buttonLink === '#catalog') {
+                            e.preventDefault();
+                            const el = document.getElementById('catalog');
+                            if (el) el.scrollIntoView({ behavior: 'smooth' });
+                          }
+                        }}
+                        target={
+                          currentSlide.buttonLink?.startsWith('http')
+                            ? '_blank'
+                            : '_self'
+                        }
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-base font-bold text-white hover:text-[#FFDC73] transition-colors group/cta"
+                      >
+                        <span className="underline underline-offset-4 decoration-2">
+                          {currentSlide.buttonText || 'Shop Now'}
+                        </span>
+                        <ArrowRight className="w-5 h-5 group-hover/cta:translate-x-1.5 transition-transform" />
+                      </a>
+                    </div>
                   </div>
+
+                  {/* Right Fashion Montage Graphic */}
+                  {currentSlide.imageUrl && (
+                    <div className="relative w-full md:w-1/2 flex justify-center items-center">
+                      <div className="relative w-64 sm:w-80 aspect-[4/3] rounded-[16px] overflow-hidden shadow-2xl border-4 border-white/20 group">
+                        <img
+                          src={currentSlide.imageUrl}
+                          alt={currentSlide.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4 text-white">
+                          <span className="text-[10px] font-bold text-[#F28C28] uppercase tracking-wider">
+                            Direct From Amarantus Clothings & Balogun
+                          </span>
+                          <p className="text-xs font-bold text-white leading-snug">
+                            Grade A Handpicked Okrika Drops Every Thursday
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Shop Now CTA */}
-                <div className="pt-2">
-                  <a
-                    href="#catalog"
-                    className="inline-flex items-center gap-2 text-base font-bold text-white hover:text-[#FFDC73] transition-colors group"
-                  >
-                    <span className="underline underline-offset-4 decoration-2">Shop Now</span>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
-                  </a>
-                </div>
-              </div>
-
-              {/* Right Fashion Montage Graphic */}
-              <div className="relative w-full md:w-1/2 flex justify-center items-center">
-                <div className="relative w-64 sm:w-80 aspect-[4/3] rounded-[16px] overflow-hidden shadow-2xl border-4 border-white/20 group">
-                  <img
-                    src="https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80"
-                    alt="Celebrate Nigeria Thrift Fashion"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4 text-white">
-                    <span className="text-[10px] font-bold text-[#F28C28] uppercase tracking-wider">
-                      Direct From Amarantus Clothings & Balogun
-                    </span>
-                    <p className="text-xs font-bold text-white leading-snug">
-                      Grade A Handpicked Okrika Drops Every Thursday
-                    </p>
+                {/* Slide Indicator Dots */}
+                {activeHeroSlides.length > 1 && (
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full">
+                    {activeHeroSlides.map((_, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setHeroSlide(idx)}
+                        className={`h-1.5 rounded-full transition-all ${
+                          idx === heroSlide % activeHeroSlides.length
+                            ? 'w-5 bg-white'
+                            : 'w-1.5 bg-white/40 hover:bg-white/70'
+                        }`}
+                        aria-label={`Go to slide ${idx + 1}`}
+                      />
+                    ))}
                   </div>
-                </div>
+                )}
               </div>
-            </div>
-
-            {/* Slide Indicator Dots (Just like Jumia banner bottom) */}
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full">
-              {[0, 1, 2, 3, 4, 5].map((idx) => (
-                <span
-                  key={idx}
-                  className={`h-1.5 rounded-full transition-all ${
-                    idx === heroSlide ? 'w-5 bg-white' : 'w-1.5 bg-white/40'
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
+            );
+          })()}
         </div>
       </section>
 

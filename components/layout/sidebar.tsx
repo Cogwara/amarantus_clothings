@@ -96,6 +96,12 @@ export const NAV_ITEMS = [
     roles: ['OWNER'],
   },
   {
+    name: 'Hero Slides',
+    icon: Sparkles,
+    route: '/hero-slides',
+    roles: ['OWNER', 'MANAGER'],
+  },
+  {
     name: 'Settings',
     icon: Settings,
     route: '/settings',

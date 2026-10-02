@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { AppShell } from '@/components/layout/app-shell';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,8 @@ import {
   Database,
   Building,
   ShieldAlert,
+  Sparkles,
+  ExternalLink,
 } from 'lucide-react';
 import { Shop } from '@/lib/types';
 
@@ -196,6 +199,44 @@ export default function SettingsPage() {
                 </Button>
               </div>
             </form>
+          </CardContent>
+        </Card>
+
+        {/* Storefront Hero Banner & Slides */}
+        <Card className="border-[#C5E9CE] overflow-hidden shadow-sm">
+          <CardHeader className="pb-3 border-b border-[#F0F4F1] bg-[#EAF7EE]/50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-[8px] bg-[#16803C] text-white">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-[#16803C]">
+                    Storefront Hero Banner Carousel & Action Links
+                  </CardTitle>
+                  <p className="text-xs text-[#66736B]">
+                    Customize rotating banner slides, promotional images, headlines, and call-to-action links
+                  </p>
+                </div>
+              </div>
+
+              <Link href="/hero-slides">
+                <Button variant="primary" size="sm" className="font-bold shadow-sm">
+                  <span>Manage Slides</span>
+                  <ExternalLink className="w-3.5 h-3.5 ml-1" />
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <p className="text-xs text-[#17211B] leading-relaxed max-w-xl">
+              Add new promotional slides with custom marketing headlines, discount badges, action buttons, links, and fashion images. Slides rotate automatically on the home page hero section.
+            </p>
+            <Link href="/hero-slides" className="shrink-0">
+              <Button variant="outline" size="sm" className="font-semibold">
+                Open Carousel Editor
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 

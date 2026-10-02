@@ -100,6 +100,13 @@ export default function DashboardPage() {
                 <span>Add Expense</span>
               </Button>
             </Link>
+
+            <Link href="/hero-slides">
+              <Button variant="outline" size="md" className="gap-2 border-[#C5E9CE] text-[#16803C] hover:bg-[#EAF7EE] font-semibold">
+                <Sparkles className="w-4 h-4 text-[#F28C28]" />
+                <span>Hero Slides</span>
+              </Button>
+            </Link>
           </div>
         </div>
 
