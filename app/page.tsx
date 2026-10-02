@@ -24,7 +24,9 @@ import {
   Heart,
   ExternalLink,
   ChevronRight,
+  ChevronLeft,
   ChevronDown,
+  Camera,
   Filter,
   Send,
   User,
@@ -35,8 +37,12 @@ import {
   Tag,
   Gift,
   Check,
+  Menu,
+  Home,
+  Share2,
+  Copy,
 } from 'lucide-react';
-import { formatNaira } from '@/lib/calculations';
+import { formatNaira, formatCompactNaira } from '@/lib/calculations';
 import { Product } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -66,7 +72,8 @@ export default function FrontShopPage() {
   const [clearanceOnly, setClearanceOnly] = React.useState(false);
   const [sortBy, setSortBy] = React.useState('newest');
 
-  // Jumia Layout States: Dropdowns, Hero Slide, and Flash Sale Countdown
+  // Layout States: Mobile Menu, Dropdowns, Hero Slide, and Flash Sale Countdown
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [accountDropdownOpen, setAccountDropdownOpen] = React.useState(false);
   const [helpDropdownOpen, setHelpDropdownOpen] = React.useState(false);
   const [heroSlide, setHeroSlide] = React.useState(0);
@@ -99,6 +106,46 @@ export default function FrontShopPage() {
 
   // Product Detail Modal
   const [detailProduct, setDetailProduct] = React.useState<Product | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = React.useState(0);
+
+  // Share Modal & Toast States
+  const [shareModalData, setShareModalData] = React.useState<{
+    title: string;
+    text: string;
+    url: string;
+    product?: Product;
+  } | null>(null);
+  const [copiedToast, setCopiedToast] = React.useState(false);
+
+  React.useEffect(() => {
+    setSelectedImageIndex(0);
+  }, [detailProduct]);
+
+  const detailImageList = React.useMemo(() => {
+    if (!detailProduct) return [];
+    if (detailProduct.images && detailProduct.images.length > 0) {
+      return detailProduct.images
+        .map((img: any) => (typeof img === 'string' ? img : img.url))
+        .filter(Boolean);
+    }
+    if (detailProduct.primaryImageUrl) {
+      return [detailProduct.primaryImageUrl];
+    }
+    return [];
+  }, [detailProduct]);
+
+  const currentDetailImage =
+    detailImageList[selectedImageIndex] || detailProduct?.primaryImageUrl || '';
+
+  const handlePrevDetailImage = () => {
+    if (detailImageList.length === 0) return;
+    setSelectedImageIndex((prev) => (prev > 0 ? prev - 1 : detailImageList.length - 1));
+  };
+
+  const handleNextDetailImage = () => {
+    if (detailImageList.length === 0) return;
+    setSelectedImageIndex((prev) => (prev < detailImageList.length - 1 ? prev + 1 : 0));
+  };
 
   // Shopping Bag / Cart
   const [cart, setCart] = React.useState<CartItem[]>([]);
@@ -145,6 +192,25 @@ export default function FrontShopPage() {
   React.useEffect(() => {
     loadStorefront();
   }, [loadStorefront]);
+
+  // Deep-link support: if ?item=SKU or ?item=ID is present in URL, auto-open Product Detail modal
+  React.useEffect(() => {
+    if (products.length === 0) return;
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const itemParam = params.get('item');
+      if (itemParam) {
+        const found = products.find(
+          (p) =>
+            p.sku?.toLowerCase() === itemParam.toLowerCase() ||
+            p.id.toLowerCase() === itemParam.toLowerCase()
+        );
+        if (found) {
+          setDetailProduct(found);
+        }
+      }
+    }
+  }, [products]);
 
   // Cart operations
   const addToCart = (product: Product, e?: React.MouseEvent) => {
@@ -206,6 +272,79 @@ export default function FrontShopPage() {
     });
     text += `\nPlease confirm my order and send payment details/receipt!`;
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+  };
+
+  // Copy to clipboard helper
+  const copyToClipboard = async (text: string) => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      setCopiedToast(true);
+      setTimeout(() => setCopiedToast(false), 2500);
+    } catch (err) {
+      console.error('Failed to copy to clipboard', err);
+    }
+  };
+
+  // Generic share handler with Web Share API fallback
+  const handleShare = async (data: {
+    title: string;
+    text: string;
+    url: string;
+    product?: Product;
+  }) => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: data.title,
+          text: data.text,
+          url: data.url,
+        });
+        return;
+      } catch (err: any) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+    // Fallback to custom share modal
+    setShareModalData(data);
+  };
+
+  // Share specific product
+  const handleShareProduct = (prod: Product, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const origin =
+      typeof window !== 'undefined' && window.location.origin
+        ? window.location.origin
+        : 'https://amarantus-clothings.vercel.app';
+    const identifier = prod.sku || prod.id;
+    const url = `${origin}/?item=${encodeURIComponent(identifier)}`;
+    const title = `${prod.name} | Amarantus Clothings`;
+    const text = `Look at this UK thrift ${prod.name} (${prod.condition}, Size: ${prod.size}) for ${formatNaira(
+      prod.sellingPrice
+    )} at Amarantus Clothings! Only ${prod.quantity} available:`;
+    handleShare({ title, text, url, product: prod });
+  };
+
+  // Share store
+  const handleShareStore = () => {
+    const origin =
+      typeof window !== 'undefined' && window.location.origin
+        ? window.location.origin
+        : 'https://amarantus-clothings.vercel.app';
+    const title = 'Amarantus Clothings - Handpicked UK Grade A Thrift Boutique';
+    const text =
+      'Shop premium UK thrift wear, blazers, vintage jeans & more at Amarantus Clothings. Authentic quality and fast delivery across Nigeria!';
+    handleShare({ title, text, url: origin });
   };
 
   // Submit Online Order
@@ -305,7 +444,7 @@ export default function FrontShopPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAF9] text-[#17211B] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAF9] text-[#17211B] flex flex-col font-sans pb-20 lg:pb-0">
       {/* Top Utility Header Bar (Jumia style) */}
       <div className="bg-[#F8FAF9] border-b border-[#DDE5DF] text-xs py-1.5 px-4 hidden sm:block">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -330,20 +469,33 @@ export default function FrontShopPage() {
         </div>
       </div>
 
-      {/* Main Jumia-Style Header */}
+      {/* Main Responsive Header */}
       <header className="sticky top-0 z-40 bg-white border-b border-[#DDE5DF] shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 sm:h-20 flex items-center justify-between gap-3 sm:gap-6">
-          {/* Jumia-Style Logo */}
-          <Link href="/" className="flex items-center gap-1.5 shrink-0 group">
-            <span className="text-2xl sm:text-3xl font-black tracking-tight text-[#17211B]">
-              AMARANTUS CLOTHINGS
-            </span>
-            <div className="w-6 h-6 rounded-full bg-[#F28C28] flex items-center justify-center text-white text-xs font-black shadow-sm group-hover:scale-110 transition-transform">
-              ★
-            </div>
-          </Link>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-6">
+          {/* Mobile Menu Hamburger Button & Logo */}
+          <div className="flex items-center gap-1.5 sm:gap-3">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-2 rounded-[8px] text-[#17211B] hover:bg-[#F8FAF9] active:bg-[#EAF7EE] transition-colors shrink-0"
+              aria-label="Open mobile menu"
+            >
+              <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
 
-          {/* Centered Search Bar with attached Orange Button */}
+            <Link href="/" className="flex items-center gap-1.5 shrink-0 group">
+              <span className="text-lg sm:text-2xl lg:text-3xl font-black tracking-tight text-[#17211B]">
+                AMARANTUS
+              </span>
+              <span className="hidden xs:inline text-lg sm:text-2xl lg:text-3xl font-black tracking-tight text-[#16803C]">
+                CLOTHINGS
+              </span>
+              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#F28C28] flex items-center justify-center text-white text-[10px] sm:text-xs font-black shadow-sm group-hover:scale-110 transition-transform">
+                ★
+              </div>
+            </Link>
+          </div>
+
+          {/* Centered Search Bar with attached Orange Button (Desktop) */}
           <div className="hidden md:flex flex-1 max-w-2xl">
             <div className="flex items-center w-full border-2 border-[#F28C28] rounded-[8px] overflow-hidden bg-white shadow-sm focus-within:ring-2 focus-within:ring-[#F28C28]/20 transition-all">
               <div className="pl-3.5 text-[#8A968F] shrink-0">
@@ -362,6 +514,14 @@ export default function FrontShopPage() {
                 }}
                 className="w-full px-3 py-2 text-xs sm:text-sm text-[#17211B] bg-transparent focus:outline-none placeholder:text-[#8A968F]"
               />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="p-1 text-[#8A968F] hover:text-[#17211B]"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
               <button
                 onClick={() => {
                   const el = document.getElementById('catalog');
@@ -374,10 +534,36 @@ export default function FrontShopPage() {
             </div>
           </div>
 
-          {/* Right Header Navigation: Account, Help, Cart */}
-          <div className="flex items-center gap-1 sm:gap-3 shrink-0">
-            {/* Account Dropdown */}
-            <div className="relative" onClick={(e) => e.stopPropagation()}>
+          {/* Right Header Navigation: WhatsApp quick link, Account, Help, Cart */}
+          <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
+            {/* Direct WhatsApp Call/Chat */}
+            <a
+              href={`https://wa.me/${shop.phone.replace(/\D/g, '')}?text=Hello%20${encodeURIComponent(
+                shop.name
+              )},%20I%20want%20to%20inquire%20about%20your%20clothes.`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-[8px] bg-[#EAF7EE] text-[#16803C] hover:bg-[#d5f2dd] text-xs font-bold transition-colors"
+              title="Chat with shop on WhatsApp"
+            >
+              <MessageCircle className="w-4 h-4 text-[#16803C]" />
+              <span className="hidden sm:inline">WhatsApp</span>
+            </a>
+
+            {/* Share Storefront */}
+            <button
+              type="button"
+              onClick={handleShareStore}
+              className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-[8px] bg-[#F4F7F5] hover:bg-[#EAEFEA] text-[#17211B] text-xs font-semibold transition-colors"
+              title="Share Amarantus Clothings"
+              aria-label="Share Storefront"
+            >
+              <Share2 className="w-4 h-4 text-[#16803C]" />
+              <span className="hidden sm:inline">Share</span>
+            </button>
+
+            {/* Account Dropdown (Desktop & Tablet) */}
+            <div className="relative hidden sm:block" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={() => {
                   setAccountDropdownOpen(!accountDropdownOpen);
@@ -422,8 +608,8 @@ export default function FrontShopPage() {
               )}
             </div>
 
-            {/* Help Dropdown */}
-            <div className="relative" onClick={(e) => e.stopPropagation()}>
+            {/* Help Dropdown (Desktop & Tablet) */}
+            <div className="relative hidden md:block" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={() => {
                   setHelpDropdownOpen(!helpDropdownOpen);
@@ -473,11 +659,11 @@ export default function FrontShopPage() {
             {/* Cart Button */}
             <button
               onClick={() => setCartOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-[8px] hover:bg-[#F8FAF9] text-xs sm:text-sm font-semibold text-[#17211B] transition-colors relative"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-[10px] bg-[#16803C]/10 hover:bg-[#16803C]/20 text-[#16803C] text-xs sm:text-sm font-bold transition-all relative active:scale-95"
               aria-label="View Cart"
             >
               <div className="relative">
-                <ShoppingCart className="w-5 h-5 text-[#17211B]" />
+                <ShoppingCart className="w-5 h-5 text-[#16803C]" />
                 {totalCartCount > 0 && (
                   <span className="absolute -top-2 -right-2.5 w-4 h-4 rounded-full bg-[#F28C28] text-white text-[10px] font-bold flex items-center justify-center border-2 border-white shadow">
                     {totalCartCount}
@@ -485,35 +671,54 @@ export default function FrontShopPage() {
                 )}
               </div>
               <span className="hidden sm:inline font-bold">Cart</span>
+              {totalCartAmount > 0 && (
+                <span className="hidden md:inline text-xs font-semibold text-[#17211B]">
+                  ({formatCompactNaira(totalCartAmount)})
+                </span>
+              )}
             </button>
           </div>
         </div>
 
         {/* Mobile Search Bar */}
-        <div className="md:hidden px-4 pb-3">
-          <div className="flex items-center w-full border-2 border-[#F28C28] rounded-[8px] overflow-hidden bg-white shadow-sm">
+        <div className="md:hidden px-3 pb-2.5">
+          <div className="flex items-center w-full border-2 border-[#F28C28] rounded-[10px] overflow-hidden bg-white shadow-sm focus-within:ring-2 focus-within:ring-[#F28C28]/20 transition-all">
             <div className="pl-3 text-[#8A968F] shrink-0">
               <Search className="w-4 h-4" />
             </div>
             <input
               type="text"
-              placeholder="Search products, brands and categories..."
+              placeholder="Search products, brands, categories..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const el = document.getElementById('catalog');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
               className="w-full px-2.5 py-2 text-xs text-[#17211B] bg-transparent focus:outline-none"
             />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="p-1 text-[#8A968F] hover:text-[#17211B]"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
             <button
               onClick={() => {
                 const el = document.getElementById('catalog');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="px-4 py-2 bg-[#F28C28] text-white text-xs font-bold uppercase shrink-0"
+              className="px-3.5 py-2 bg-[#F28C28] hover:bg-[#D96F0B] text-white text-xs font-bold uppercase shrink-0 transition-colors"
             >
               Search
             </button>
           </div>
         </div>
-
       </header>
 
       {/* Hero & Side Category Section (Jumia Style) */}
@@ -639,21 +844,21 @@ export default function FrontShopPage() {
           </aside>
 
           {/* Hero Promotional Banner (lg:col-span-9) */}
-          <div className="lg:col-span-9 relative rounded-[16px] overflow-hidden bg-gradient-to-r from-[#07381C] via-[#0D5C2E] to-[#0A4723] text-white shadow-xl min-h-[340px] sm:min-h-[380px] flex items-center border border-[#16803C]">
+          <div className="lg:col-span-9 relative rounded-[16px] overflow-hidden bg-gradient-to-r from-[#07381C] via-[#0D5C2E] to-[#0A4723] text-white shadow-xl min-h-[280px] sm:min-h-[380px] flex items-center border border-[#16803C]">
             {/* Subtle Background Pattern Accent */}
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]" />
 
-            <div className="relative z-10 w-full p-6 sm:p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="relative z-10 w-full p-4 sm:p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
               {/* Left Content */}
-              <div className="max-w-md space-y-4 text-center md:text-left">
+              <div className="max-w-md space-y-2.5 sm:space-y-4 text-center md:text-left">
                 {/* Tagline */}
-                <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-black tracking-wider uppercase text-white/90">
-                  <span className="text-[#F28C28] text-base">★</span>
+                <div className="inline-flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-sm font-black tracking-wider uppercase text-white/90">
+                  <span className="text-[#F28C28] text-sm sm:text-base">★</span>
                   <span>• NAIJA WE DEY FOR YOU •</span>
                 </div>
 
                 {/* Giant Headline */}
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] text-white">
+                <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.15] text-white">
                   Celebrate Nigeria <br />
                   <span className="text-[#FFDC73]">Celebrate Savings</span>
                 </h1>
@@ -909,6 +1114,12 @@ export default function FrontShopPage() {
                     <div className="absolute top-1.5 right-1.5 bg-[#DC2626] text-white text-[10px] font-black px-1.5 py-0.5 rounded">
                       -{discountPercent}%
                     </div>
+                    {p.images && p.images.length > 1 && (
+                      <div className="absolute bottom-1.5 right-1.5 bg-black/65 backdrop-blur-sm text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-1 shadow-sm pointer-events-none">
+                        <Camera className="w-3 h-3 text-[#F28C28]" />
+                        <span>{p.images.length}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -1078,6 +1289,13 @@ export default function FrontShopPage() {
                     <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm text-[#17211B] text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                       {p.quantity === 1 ? '⚡ 1 piece only' : `${p.quantity} pcs left`}
                     </div>
+
+                    {p.images && p.images.length > 1 && (
+                      <div className="absolute bottom-2 right-2 bg-black/65 backdrop-blur-sm text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-1 shadow-sm pointer-events-none">
+                        <Camera className="w-3 h-3 text-[#F28C28]" />
+                        <span>{p.images.length}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Card Body */}
@@ -1110,17 +1328,29 @@ export default function FrontShopPage() {
                         </span>
                       </div>
 
-                      <button
-                        onClick={(e) => addToCart(p, e)}
-                        className={`p-2 rounded-full transition-all shrink-0 ${
-                          inCart
-                            ? 'bg-[#16803C] text-white'
-                            : 'bg-[#EAF7EE] text-[#16803C] hover:bg-[#16803C] hover:text-white'
-                        }`}
-                        title="Add to Bag"
-                      >
-                        <ShoppingBag className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => handleShareProduct(p, e)}
+                          className="p-2 rounded-full transition-all text-[#66736B] hover:text-[#16803C] hover:bg-[#F0F4F1]"
+                          title="Share Piece"
+                          aria-label="Share this piece"
+                        >
+                          <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => addToCart(p, e)}
+                          className={`p-2 rounded-full transition-all shrink-0 ${
+                            inCart
+                              ? 'bg-[#16803C] text-white'
+                              : 'bg-[#EAF7EE] text-[#16803C] hover:bg-[#16803C] hover:text-white'
+                          }`}
+                          title="Add to Bag"
+                        >
+                          <ShoppingBag className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1142,12 +1372,12 @@ export default function FrontShopPage() {
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
               {/* Left Column: Product Photo & Badges */}
               <div className="md:col-span-5 space-y-3">
-                <div className="relative aspect-square w-full rounded-[14px] bg-[#F8FAF9] overflow-hidden border border-[#DDE5DF] shadow-sm">
-                  {detailProduct.primaryImageUrl ? (
+                <div className="relative aspect-square w-full rounded-[14px] bg-[#F8FAF9] overflow-hidden border border-[#DDE5DF] shadow-sm select-none">
+                  {currentDetailImage ? (
                     <img
-                      src={detailProduct.primaryImageUrl}
+                      src={currentDetailImage}
                       alt={detailProduct.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-all duration-200"
                     />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center font-bold text-gray-300">
@@ -1168,7 +1398,62 @@ export default function FrontShopPage() {
                       CLEARANCE SALE
                     </div>
                   )}
+
+                  {/* Prev / Next navigation arrows over photo if multiple images */}
+                  {detailImageList.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePrevDetailImage();
+                        }}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/55 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-sm transition-all shadow-md active:scale-95 cursor-pointer z-10"
+                        title="Previous photo"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleNextDetailImage();
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/55 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-sm transition-all shadow-md active:scale-95 cursor-pointer z-10"
+                        title="Next photo"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                      <div className="absolute bottom-2.5 right-2.5 bg-black/65 backdrop-blur-md text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow pointer-events-none">
+                        {selectedImageIndex + 1} / {detailImageList.length}
+                      </div>
+                    </>
+                  )}
                 </div>
+
+                {/* Interactive Thumbnail Gallery Strip */}
+                {detailImageList.length > 1 && (
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+                    {detailImageList.map((url, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setSelectedImageIndex(idx)}
+                        className={`relative w-14 h-14 rounded-[8px] overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
+                          selectedImageIndex === idx
+                            ? 'border-[#16803C] ring-2 ring-[#16803C]/25 shadow-sm scale-105'
+                            : 'border-[#DDE5DF] opacity-70 hover:opacity-100'
+                        }`}
+                      >
+                        <img
+                          src={url}
+                          alt={`${detailProduct.name} ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 {/* Quality & Sanitation Badge */}
                 <div className="p-3 bg-[#EAF7EE]/70 rounded-[12px] border border-[#C5E9CE] space-y-1.5 text-[11px] text-[#0F5C2E]">
@@ -1297,6 +1582,18 @@ export default function FrontShopPage() {
                       </Button>
                     </a>
                   </div>
+
+                  {/* Share Piece */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="md"
+                    onClick={() => handleShareProduct(detailProduct)}
+                    className="w-full font-bold border-[#DDE5DF] hover:bg-[#F8FAF9] text-[#17211B]"
+                  >
+                    <Share2 className="w-4 h-4 shrink-0 mr-1.5 text-[#16803C]" />
+                    <span>Share This Piece</span>
+                  </Button>
 
                   <p className="text-[11px] text-center text-[#8A968F] font-medium">
                     ⚡ Fast FCT Delivery & Nationwide Waybill
@@ -1750,6 +2047,444 @@ export default function FrontShopPage() {
           </div>
         </div>
       </footer>
+
+      {/* Storefront Mobile Bottom Navigation Bar (like dashboard BottomNav) */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-t border-[#DDE5DF] px-2 flex items-center justify-around z-40 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]">
+        {/* 1. Store / Home */}
+        <button
+          onClick={() => {
+            setSelectedCategory('');
+            setClearanceOnly(false);
+            setSearch('');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className="flex flex-col items-center justify-center flex-1 py-1 text-center group cursor-pointer"
+        >
+          <Home
+            className={`w-5 h-5 transition-colors ${
+              selectedCategory === '' && !clearanceOnly && !search
+                ? 'text-[#16803C]'
+                : 'text-[#66736B] group-hover:text-[#17211B]'
+            }`}
+          />
+          <span
+            className={`text-[10px] font-bold mt-1 transition-colors ${
+              selectedCategory === '' && !clearanceOnly && !search
+                ? 'text-[#16803C]'
+                : 'text-[#66736B] group-hover:text-[#17211B]'
+            }`}
+          >
+            Store
+          </span>
+        </button>
+
+        {/* 2. Categories Drawer */}
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="flex flex-col items-center justify-center flex-1 py-1 text-center group cursor-pointer"
+        >
+          <Filter
+            className={`w-5 h-5 transition-colors ${
+              selectedCategory !== '' || clearanceOnly
+                ? 'text-[#16803C]'
+                : 'text-[#66736B] group-hover:text-[#17211B]'
+            }`}
+          />
+          <span
+            className={`text-[10px] font-bold mt-1 transition-colors ${
+              selectedCategory !== '' || clearanceOnly
+                ? 'text-[#16803C]'
+                : 'text-[#66736B] group-hover:text-[#17211B]'
+            }`}
+          >
+            Categories
+          </span>
+        </button>
+
+        {/* 3. Floating Center Cart Button */}
+        <button
+          onClick={() => setCartOpen(true)}
+          className="flex flex-col items-center justify-center -mt-5 flex-1 relative group cursor-pointer"
+        >
+          <div className="w-13 h-13 rounded-full bg-[#16803C] hover:bg-[#0F5C2E] text-white flex items-center justify-center shadow-lg border-2 border-white transition-transform active:scale-95">
+            <ShoppingCart className="w-6 h-6" />
+            {totalCartCount > 0 && (
+              <span className="absolute -top-1 right-2 min-w-5 h-5 rounded-full bg-[#F28C28] text-white text-[10px] font-black flex items-center justify-center px-1 border-2 border-white shadow">
+                {totalCartCount}
+              </span>
+            )}
+          </div>
+          <span className="text-[10px] font-bold mt-1 text-[#17211B]">
+            Bag {totalCartAmount > 0 && `(${formatCompactNaira(totalCartAmount)})`}
+          </span>
+        </button>
+
+        {/* 4. WhatsApp Chat */}
+        <a
+          href={`https://wa.me/${shop.phone.replace(/\D/g, '')}?text=Hello%20${encodeURIComponent(
+            shop.name
+          )},%20I%20want%20to%20inquire%20about%20your%20clothes.`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-col items-center justify-center flex-1 py-1 text-center group cursor-pointer"
+        >
+          <MessageCircle className="w-5 h-5 text-[#16803C]" />
+          <span className="text-[10px] font-bold mt-1 text-[#66736B] group-hover:text-[#17211B]">
+            WhatsApp
+          </span>
+        </a>
+
+        {/* 5. Account / Staff Sign In */}
+        <Link
+          href="/dashboard"
+          className="flex flex-col items-center justify-center flex-1 py-1 text-center group cursor-pointer"
+        >
+          <User className="w-5 h-5 text-[#66736B] group-hover:text-[#17211B]" />
+          <span className="text-[10px] font-bold mt-1 text-[#66736B] group-hover:text-[#17211B]">
+            Admin
+          </span>
+        </Link>
+      </nav>
+
+      {/* Mobile Slide-Out Navigation Drawer (like dashboard AppShell Drawer) */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fadeIn"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+
+          <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col z-10 animate-slideRight">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-[#F0F4F1] bg-[#F8FAF9]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-[10px] bg-[#16803C] text-white flex items-center justify-center font-black text-sm shadow-sm">
+                  AC
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-[#17211B] leading-tight">
+                    {shop.name}
+                  </h3>
+                  <p className="text-[11px] text-[#16803C] font-semibold">Handpicked UK Thrift</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-1.5 rounded-full text-[#66736B] hover:bg-white hover:shadow-sm transition-all"
+                aria-label="Close menu"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Actions / Categories inside Drawer */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {/* Category Collections */}
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-[#8A968F] mb-2 px-1">
+                  Browse Collections
+                </p>
+                <div className="space-y-1">
+                  <button
+                    onClick={() => {
+                      setSelectedCategory('');
+                      setClearanceOnly(false);
+                      setMobileMenuOpen(false);
+                      const el = document.getElementById('catalog');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-[10px] text-xs font-bold transition-all ${
+                      selectedCategory === '' && !clearanceOnly
+                        ? 'bg-[#16803C] text-white shadow-sm'
+                        : 'text-[#17211B] hover:bg-[#F8FAF9]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span>🏛️</span>
+                      <span>All Items</span>
+                    </div>
+                    <span className="text-[10px] opacity-80">{products.length} pcs</span>
+                  </button>
+
+                  {categories.map((c) => {
+                    const isSelected = selectedCategory === c.id && !clearanceOnly;
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => {
+                          setSelectedCategory(c.id);
+                          setClearanceOnly(false);
+                          setMobileMenuOpen(false);
+                          const el = document.getElementById('catalog');
+                          if (el) el.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-[10px] text-xs font-semibold transition-all ${
+                          isSelected
+                            ? 'bg-[#16803C] text-white font-bold shadow-sm'
+                            : 'text-[#55635B] hover:bg-[#F8FAF9] hover:text-[#17211B]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span>{getCategoryIcon(c.name)}</span>
+                          <span>{c.name}</span>
+                        </div>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                            isSelected ? 'bg-white/20 text-white' : 'text-[#8A968F] bg-[#F8FAF9]'
+                          }`}
+                        >
+                          {c.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    onClick={() => {
+                      setClearanceOnly(true);
+                      setMobileMenuOpen(false);
+                      const el = document.getElementById('catalog');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-[10px] text-xs font-bold transition-all ${
+                      clearanceOnly
+                        ? 'bg-[#DC2626] text-white shadow-sm'
+                        : 'text-[#DC2626] hover:bg-red-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span>🔥</span>
+                      <span>Clearance Deals</span>
+                    </div>
+                    <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-[#FFF1E2] text-[#D96F0B]">
+                      -50%
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Customer Support Links in Drawer */}
+              <div className="pt-2 border-t border-[#F0F4F1]">
+                <p className="text-[10px] font-black uppercase tracking-wider text-[#8A968F] mb-2 px-1">
+                  Customer Support
+                </p>
+                <div className="space-y-1.5">
+                  <a
+                    href={`https://wa.me/${shop.phone.replace(/\D/g, '')}?text=Hello%20${encodeURIComponent(
+                      shop.name
+                    )},%20I%20need%20assistance%20with%20an%20order.`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[#16803C] bg-[#EAF7EE] hover:bg-[#d4f2dc] rounded-[10px] transition-colors"
+                  >
+                    <MessageCircle className="w-4 h-4 text-[#16803C]" />
+                    <span>WhatsApp Live Chat</span>
+                  </a>
+
+                  {/* Share Storefront Link in Mobile Drawer */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      handleShareStore();
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-[#17211B] bg-[#F4F7F5] hover:bg-[#EAEFEA] rounded-[10px] transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Share2 className="w-4 h-4 text-[#16803C]" />
+                      <span>Share Shop with Friends</span>
+                    </div>
+                    <span className="text-[10px] text-[#16803C] font-bold">Invite</span>
+                  </button>
+
+                  <a
+                    href={`tel:${shop.phone.replace(/\D/g, '')}`}
+                    className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#17211B] hover:bg-[#F8FAF9] rounded-[10px] transition-colors"
+                  >
+                    <Phone className="w-4 h-4 text-[#F28C28]" />
+                    <span>Call Customer Care</span>
+                  </a>
+
+                  <div className="flex items-start gap-2.5 px-3 py-2 text-[11px] text-[#66736B]">
+                    <MapPin className="w-4 h-4 text-[#8A968F] shrink-0 mt-0.5" />
+                    <span>{shop.address}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Staff Portal Link */}
+              <div className="pt-2 border-t border-[#F0F4F1]">
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-[10px] bg-[#F8FAF9] hover:bg-[#EAF7EE] text-xs font-bold text-[#17211B] hover:text-[#16803C] border border-[#DDE5DF] transition-all"
+                >
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-[#16803C]" />
+                    <span>Staff & Owner Sign In</span>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 opacity-50" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal Dialog */}
+      <Modal
+        isOpen={Boolean(shareModalData)}
+        onClose={() => setShareModalData(null)}
+        title="Share with Friends & Family"
+        maxWidth="md"
+      >
+        {shareModalData && (
+          <div className="p-4 sm:p-6 space-y-5">
+            {/* Target Item / Store Summary Card */}
+            <div className="p-3.5 bg-[#F8FAF9] rounded-[12px] border border-[#DDE5DF] flex items-center gap-3">
+              {shareModalData.product ? (
+                <>
+                  <div className="w-14 h-14 rounded-[8px] bg-white border border-[#DDE5DF] overflow-hidden shrink-0">
+                    {shareModalData.product.primaryImageUrl ? (
+                      <img
+                        src={shareModalData.product.primaryImageUrl}
+                        alt={shareModalData.product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center font-bold text-xs text-gray-300">
+                        CS
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-[#17211B] truncate">
+                      {shareModalData.product.name}
+                    </p>
+                    <p className="text-[11px] text-[#66736B]">
+                      Size: <strong className="text-[#17211B]">{shareModalData.product.size}</strong> • Grade:{' '}
+                      <strong className="text-[#16803C]">{shareModalData.product.condition}</strong>
+                    </p>
+                    <p className="text-xs font-extrabold text-[#16803C] mt-0.5">
+                      {formatNaira(shareModalData.product.sellingPrice)}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-[10px] bg-[#16803C] text-white flex items-center justify-center font-black text-base shrink-0 shadow-sm">
+                    AC
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-[#17211B]">{shop.name}</h4>
+                    <p className="text-xs text-[#66736B]">
+                      Handpicked UK Thrift Boutique • Direct Delivery
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Social Share Buttons Grid */}
+            <div>
+              <p className="text-xs font-bold text-[#17211B] mb-2.5">Share via social media:</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {/* WhatsApp */}
+                <a
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+                    shareModalData.text + '\n' + shareModalData.url
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-[12px] bg-[#EAF7EE] text-[#16803C] hover:bg-[#d4f2dc] transition-all text-xs font-bold shadow-sm"
+                >
+                  <MessageCircle className="w-5 h-5 text-[#16803C]" />
+                  <span>WhatsApp</span>
+                </a>
+
+                {/* X / Twitter */}
+                <a
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                    shareModalData.text
+                  )}&url=${encodeURIComponent(shareModalData.url)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-[12px] bg-[#F4F7F5] text-[#17211B] hover:bg-[#EAEFEA] transition-all text-xs font-bold shadow-sm"
+                >
+                  <span className="text-base font-black leading-none">𝕏</span>
+                  <span>X / Twitter</span>
+                </a>
+
+                {/* Facebook */}
+                <a
+                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+                    shareModalData.url
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-[12px] bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2]/20 transition-all text-xs font-bold shadow-sm"
+                >
+                  <span className="text-base font-black leading-none">f</span>
+                  <span>Facebook</span>
+                </a>
+
+                {/* Telegram */}
+                <a
+                  href={`https://t.me/share/url?url=${encodeURIComponent(
+                    shareModalData.url
+                  )}&text=${encodeURIComponent(shareModalData.text)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-[12px] bg-[#0088cc]/10 text-[#0088cc] hover:bg-[#0088cc]/20 transition-all text-xs font-bold shadow-sm"
+                >
+                  <Send className="w-5 h-5 text-[#0088cc]" />
+                  <span>Telegram</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Direct Link Copy Box */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#17211B]">Or copy link:</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={shareModalData.url}
+                  className="w-full text-xs bg-[#F8FAF9] border border-[#DDE5DF] rounded-[8px] px-3 py-2 text-[#17211B] focus:outline-none select-all"
+                />
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={() => copyToClipboard(shareModalData.url)}
+                  className="shrink-0 font-bold"
+                >
+                  {copiedToast ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 mr-1" />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 mr-1" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Floating Copied Toast Alert */}
+      {copiedToast && (
+        <div className="fixed bottom-20 sm:bottom-8 left-1/2 -translate-x-1/2 z-50 bg-[#17211B] text-white px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 border border-white/20 animate-fadeIn">
+          <CheckCircle2 className="w-4 h-4 text-[#16803C]" />
+          <span className="text-xs font-semibold">Link copied to clipboard!</span>
+        </div>
+      )}
     </div>
   );
 }
