@@ -24,7 +24,9 @@ import {
   List,
   Pencil,
   Image as ImageIcon,
+  ZoomIn,
 } from 'lucide-react';
+import { ImageLightbox } from '@/components/ui/image-lightbox';
 import { formatNaira, calculateMarginPercentage } from '@/lib/calculations';
 import { Product, Condition, ProductStatus, MovementType } from '@/lib/types';
 
@@ -33,6 +35,38 @@ export default function InventoryPage() {
   const [products, setProducts] = React.useState<Product[]>([]);
   const [categories, setCategories] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
+
+  // Lightbox Zoom Viewer state
+  const [lightboxData, setLightboxData] = React.useState<{
+    isOpen: boolean;
+    images: string[];
+    initialIndex: number;
+    title?: string;
+    subtitle?: string;
+  }>({
+    isOpen: false,
+    images: [],
+    initialIndex: 0,
+  });
+
+  const openLightbox = (product: Product, index: number = 0) => {
+    let images: string[] = [];
+    if (product.images && product.images.length > 0) {
+      images = product.images
+        .map((img: any) => (typeof img === 'string' ? img : img.url))
+        .filter(Boolean);
+    } else if (product.primaryImageUrl) {
+      images = [product.primaryImageUrl];
+    }
+    if (images.length === 0) return;
+    setLightboxData({
+      isOpen: true,
+      images,
+      initialIndex: index,
+      title: product.name,
+      subtitle: `${product.sku} • ${formatNaira(product.sellingPrice)} • Grade: ${product.condition}`,
+    });
+  };
 
   // Filters
   const [search, setSearch] = React.useState('');
@@ -473,26 +507,38 @@ export default function InventoryPage() {
                 >
                   <div>
                     {/* Photo & Status Badge */}
-                    <div className="relative aspect-[4/3] w-full bg-gray-100 overflow-hidden border-b border-[#F0F4F1]">
+                    <div
+                      onClick={() => p.primaryImageUrl && openLightbox(p)}
+                      className={`relative aspect-[4/3] w-full bg-gray-100 overflow-hidden border-b border-[#F0F4F1] group/photo ${
+                        p.primaryImageUrl ? 'cursor-zoom-in' : ''
+                      }`}
+                    >
                       {p.primaryImageUrl ? (
-                        <img
-                          src={p.primaryImageUrl}
-                          alt={p.name}
-                          className="w-full h-full object-cover"
-                        />
+                        <>
+                          <img
+                            src={p.primaryImageUrl}
+                            alt={p.name}
+                            className="w-full h-full object-cover group-hover/photo:scale-105 transition-transform duration-300"
+                          />
+                          <div className="opacity-0 group-hover/photo:opacity-100 transition-opacity absolute inset-0 bg-black/25 flex items-center justify-center">
+                            <span className="p-2 rounded-full bg-black/70 text-white backdrop-blur-sm shadow-md">
+                              <ZoomIn className="w-4 h-4 text-[#FFDC73]" />
+                            </span>
+                          </div>
+                        </>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center font-bold text-gray-300">
                           CS
                         </div>
                       )}
-                      <div className="absolute top-2 left-2">
+                      <div className="absolute top-2 left-2 z-10 pointer-events-none">
                         {getStatusBadge(p)}
                       </div>
-                      <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10 pointer-events-none">
                         {p.condition}
                       </div>
                       {p.images && p.images.length > 1 && (
-                        <div className="absolute bottom-2 right-2 bg-black/65 backdrop-blur-xs text-white text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                        <div className="absolute bottom-2 right-2 bg-black/65 backdrop-blur-xs text-white text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs z-10 pointer-events-none">
                           <ImageIcon className="w-3 h-3 text-white" />
                           <span>{p.images.length} photos</span>
                         </div>
@@ -608,7 +654,13 @@ export default function InventoryPage() {
                       <tr key={p.id} className="hover:bg-[#F8FAF9] transition-colors">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2.5">
-                            <div className="relative w-8 h-8 rounded-[6px] overflow-hidden bg-gray-100 border border-[#DDE5DF] shrink-0 flex items-center justify-center">
+                            <div
+                              onClick={() => p.primaryImageUrl && openLightbox(p)}
+                              className={`relative w-8 h-8 rounded-[6px] overflow-hidden bg-gray-100 border border-[#DDE5DF] shrink-0 flex items-center justify-center ${
+                                p.primaryImageUrl ? 'cursor-zoom-in hover:border-[#16803C] hover:scale-105 transition-all' : ''
+                              }`}
+                              title={p.primaryImageUrl ? 'Click to zoom' : undefined}
+                            >
                               {p.primaryImageUrl ? (
                                 <img
                                   src={p.primaryImageUrl}
@@ -619,7 +671,7 @@ export default function InventoryPage() {
                                 <span className="text-[9px] font-bold text-gray-400">CS</span>
                               )}
                               {p.images && p.images.length > 1 && (
-                                <div className="absolute bottom-0 right-0 bg-[#16803C] text-white text-[8px] font-bold px-1 rounded-tl shadow-xs" title={`${p.images.length} photos`}>
+                                <div className="absolute bottom-0 right-0 bg-[#16803C] text-white text-[8px] font-bold px-1 rounded-tl shadow-xs pointer-events-none" title={`${p.images.length} photos`}>
                                   {p.images.length}
                                 </div>
                               )}
@@ -1180,6 +1232,16 @@ export default function InventoryPage() {
           </div>
         )}
       </Modal>
+
+      {/* Full-Screen Zoomable Lightbox */}
+      <ImageLightbox
+        isOpen={lightboxData.isOpen}
+        onClose={() => setLightboxData((prev) => ({ ...prev, isOpen: false }))}
+        images={lightboxData.images}
+        initialIndex={lightboxData.initialIndex}
+        title={lightboxData.title}
+        subtitle={lightboxData.subtitle}
+      />
     </AppShell>
   );
 }

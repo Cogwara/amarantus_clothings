@@ -41,6 +41,9 @@ import {
   Home,
   Share2,
   Copy,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
 } from 'lucide-react';
 import { formatNaira, formatCompactNaira } from '@/lib/calculations';
 import { Product } from '@/lib/types';
@@ -48,6 +51,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
+import { ImageLightbox } from '@/components/ui/image-lightbox';
 import { Logo } from '@/components/ui/logo';
 import { InstallAppButton } from '@/components/pwa/pwa-install';
 
@@ -164,6 +168,24 @@ export default function FrontShopClient() {
   // Product Detail Modal
   const [detailProduct, setDetailProduct] = React.useState<Product | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = React.useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = React.useState(false);
+  const [hoverZoom, setHoverZoom] = React.useState<{ isHovered: boolean; x: number; y: number }>({
+    isHovered: false,
+    x: 50,
+    y: 50,
+  });
+
+  const handlePhotoMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    if (width === 0 || height === 0) return;
+    const x = Math.max(0, Math.min(100, ((e.clientX - left) / width) * 100));
+    const y = Math.max(0, Math.min(100, ((e.clientY - top) / height) * 100));
+    setHoverZoom({ isHovered: true, x, y });
+  };
+
+  const handlePhotoMouseLeave = () => {
+    setHoverZoom((prev) => ({ ...prev, isHovered: false }));
+  };
 
   // Share Modal & Toast States
   const [shareModalData, setShareModalData] = React.useState<{
@@ -1430,6 +1452,24 @@ export default function FrontShopClient() {
                       -{discountPercent}%
                     </div>
 
+                    {/* Quick Zoom Button on Hover */}
+                    {p.primaryImageUrl && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDetailProduct(p);
+                          setSelectedImageIndex(0);
+                          setIsLightboxOpen(true);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-12 p-1.5 rounded-full bg-black/75 hover:bg-black/95 active:scale-95 text-white backdrop-blur-sm shadow-md z-10 cursor-pointer"
+                        title="Click to zoom photo"
+                        aria-label="Zoom photo"
+                      >
+                        <ZoomIn className="w-3.5 h-3.5 text-[#FFDC73]" />
+                      </button>
+                    )}
+
                     {/* Quantity Pill */}
                     <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm text-[#17211B] text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                       {p.quantity === 1 ? '⚡ 1 piece only' : `${p.quantity} pcs left`}
@@ -1517,12 +1557,22 @@ export default function FrontShopClient() {
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
               {/* Left Column: Product Photo & Badges */}
               <div className="md:col-span-5 space-y-3">
-                <div className="relative aspect-square w-full rounded-[14px] bg-[#F8FAF9] overflow-hidden border border-[#DDE5DF] shadow-sm select-none">
+                <div
+                  onClick={() => setIsLightboxOpen(true)}
+                  onMouseMove={handlePhotoMouseMove}
+                  onMouseLeave={handlePhotoMouseLeave}
+                  className="relative aspect-square w-full rounded-[14px] bg-[#F8FAF9] overflow-hidden border border-[#DDE5DF] shadow-sm select-none cursor-zoom-in group/photo"
+                >
                   {currentDetailImage ? (
                     <img
                       src={currentDetailImage}
                       alt={detailProduct.name}
-                      className="w-full h-full object-cover transition-all duration-200"
+                      style={{
+                        transformOrigin: `${hoverZoom.x}% ${hoverZoom.y}%`,
+                        transform: hoverZoom.isHovered ? 'scale(2.2)' : 'scale(1)',
+                        transition: hoverZoom.isHovered ? 'none' : 'transform 0.25s ease-out',
+                      }}
+                      className="w-full h-full object-cover pointer-events-none select-none"
                     />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center font-bold text-gray-300">
@@ -1532,16 +1582,34 @@ export default function FrontShopClient() {
                   )}
 
                   {/* Condition Pill Overlaid */}
-                  <div className="absolute top-2.5 left-2.5 bg-black/75 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow">
+                  <div className="absolute top-2.5 left-2.5 bg-black/75 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow z-10 pointer-events-none">
                     <Sparkles className="w-3.5 h-3.5 text-[#F28C28]" />
                     <span>Grade: {detailProduct.condition}</span>
                   </div>
 
                   {/* Clearance Tag if clearance */}
                   {detailProduct.status === 'CLEARANCE' && (
-                    <div className="absolute top-2.5 right-2.5 bg-[#DC2626] text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow">
+                    <div className="absolute top-2.5 right-2.5 bg-[#DC2626] text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow z-10 pointer-events-none">
                       CLEARANCE SALE
                     </div>
+                  )}
+
+                  {/* Zoom Action Hint Button Badge */}
+                  {currentDetailImage && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsLightboxOpen(true);
+                      }}
+                      className="absolute bottom-2.5 left-2.5 bg-black/75 hover:bg-black/90 active:scale-95 text-white text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-md backdrop-blur-md transition-all cursor-pointer z-10"
+                      title="Click to view full screen & zoom"
+                      aria-label="Click to zoom image"
+                    >
+                      <ZoomIn className="w-3.5 h-3.5 text-[#FFDC73]" />
+                      <span className="hidden sm:inline">Click to Zoom</span>
+                      <span className="sm:hidden">Zoom</span>
+                    </button>
                   )}
 
                   {/* Prev / Next navigation arrows over photo if multiple images */}
@@ -1555,6 +1623,7 @@ export default function FrontShopClient() {
                         }}
                         className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/55 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-sm transition-all shadow-md active:scale-95 cursor-pointer z-10"
                         title="Previous photo"
+                        aria-label="Previous photo"
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
@@ -1566,10 +1635,11 @@ export default function FrontShopClient() {
                         }}
                         className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/55 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-sm transition-all shadow-md active:scale-95 cursor-pointer z-10"
                         title="Next photo"
+                        aria-label="Next photo"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>
-                      <div className="absolute bottom-2.5 right-2.5 bg-black/65 backdrop-blur-md text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow pointer-events-none">
+                      <div className="absolute bottom-2.5 right-2.5 bg-black/65 backdrop-blur-md text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow pointer-events-none z-10">
                         {selectedImageIndex + 1} / {detailImageList.length}
                       </div>
                     </>
@@ -2633,6 +2703,20 @@ export default function FrontShopClient() {
           <span className="text-xs font-semibold">Link copied to clipboard!</span>
         </div>
       )}
+
+      {/* Full-Screen Zoomable Image Lightbox */}
+      <ImageLightbox
+        isOpen={isLightboxOpen}
+        onClose={() => setIsLightboxOpen(false)}
+        images={detailImageList}
+        initialIndex={selectedImageIndex}
+        title={detailProduct?.name}
+        subtitle={
+          detailProduct
+            ? `${formatNaira(detailProduct.sellingPrice)} • Grade: ${detailProduct.condition} • Size: ${detailProduct.size}`
+            : undefined
+        }
+      />
     </div>
   );
 }
