@@ -17,7 +17,9 @@ export async function GET() {
     const res = await query(`
       SELECT 
         sp.*,
+        COALESCE(sp."imageUrl", pi.url) as "imageUrl",
         p.name as "productName",
+        p.sku as "productSku",
         p."sellingPrice" as "productPrice",
         p.size as "productSize",
         p.condition as "productCondition",
@@ -25,6 +27,7 @@ export async function GET() {
       FROM social_posts sp
       JOIN products p ON sp."productId" = p.id
       JOIN categories c ON p."categoryId" = c.id
+      LEFT JOIN product_images pi ON pi."productId" = p.id AND pi."isPrimary" = true
       ORDER BY sp."createdAt" DESC
     `);
 

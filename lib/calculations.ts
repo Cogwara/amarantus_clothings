@@ -129,6 +129,9 @@ export function generateSocialCaptions(params: {
   shopName: string;
   shopPhone: string;
   shopAddress: string;
+  imageUrl?: string | null;
+  itemUrl?: string | null;
+  includeLink?: boolean;
 }) {
   const conditionLabel =
     params.condition === 'EXCELLENT'
@@ -142,16 +145,35 @@ export function generateSocialCaptions(params: {
   const brandText = params.brand ? `🏷️ Brand: ${params.brand}\n` : '';
   const formattedPrice = formatNaira(params.price);
 
+  let linkText = '';
+  if (params.includeLink !== false) {
+    if (params.imageUrl) {
+      linkText += `📸 *Photo:* ${params.imageUrl}\n`;
+    }
+    if (params.itemUrl) {
+      linkText += `🛒 *Order/View:* ${params.itemUrl}\n`;
+    }
+    if (linkText) {
+      linkText = `${linkText}\n`;
+    }
+  }
+
   const whatsappCaption = `✨ *NEW ARRIVAL AT ${params.shopName.toUpperCase()}* ✨\n\n` +
     `👗 *Item:* ${params.productName}\n` +
     brandText +
     `📏 *Size:* ${params.size}\n` +
     `⭐ *Condition:* ${conditionLabel}\n` +
     `💰 *Price:* ${formattedPrice}\n\n` +
+    linkText +
     `📍 *Shop Location:* ${params.shopAddress}\n` +
     `🚚 Fast delivery available across FCT & nationwide!\n\n` +
     `📲 *To order or claim:* Reply to this status or WhatsApp ${params.shopPhone}\n` +
     `⚡ Only 1 piece available! Fastest finger wins.`;
+
+  const igLinkText =
+    params.includeLink !== false && params.itemUrl
+      ? `\n🔗 Direct Link: ${params.itemUrl}\n`
+      : '';
 
   const instagramCaption = `✨ Fresh Thrift Pick! ✨\n\n` +
     `${params.productName} in stunning condition.\n\n` +
@@ -161,8 +183,9 @@ export function generateSocialCaptions(params: {
     `• Quality: ${conditionLabel}\n` +
     `• Price: ${formattedPrice}\n\n` +
     `📍 Visit us: ${params.shopAddress}\n` +
-    `📦 We deliver doorstep nationwide!\n\n` +
-    `HOW TO ORDER:\n` +
+    `📦 We deliver doorstep nationwide!\n` +
+    igLinkText +
+    `\nHOW TO ORDER:\n` +
     `1. Send a DM with screenshot\n` +
     `2. Or WhatsApp us via link in bio (${params.shopPhone})\n\n` +
     `#fctthrift #thriftfct #okrikaonline #amarantusclothings #abujathrift #nigerianfashion #sustainablefashionng #${params.category.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
