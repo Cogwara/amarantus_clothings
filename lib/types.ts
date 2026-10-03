@@ -54,6 +54,9 @@ export interface Shop {
   address: string;
   logo?: string | null;
   currency: string;
+  defaultDiscountPercent?: number;
+  clearanceDiscountPercent?: number;
+  showDiscountBadges?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -100,6 +103,7 @@ export interface Product {
   images?: ProductImage[];
   primaryImageUrl?: string;
   daysInStock?: number;
+  discountPercent?: number | null;
 }
 
 export interface Supplier {

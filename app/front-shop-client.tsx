@@ -1439,8 +1439,25 @@ export default function FrontShopClient() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {products.map((p) => {
               const inCart = cart.find((it) => it.product.id === p.id);
-              const discountPercent = p.status === 'CLEARANCE' ? 50 : 30;
-              const originalPrice = Math.round(p.sellingPrice / (1 - discountPercent / 100));
+              
+              // Dynamic discount control from shop settings & product overrides
+              const showBadges = shop.showDiscountBadges !== false;
+              const defaultCatalogDiscount = typeof shop.defaultDiscountPercent === 'number' ? shop.defaultDiscountPercent : 30;
+              const defaultClearanceDiscount = typeof shop.clearanceDiscountPercent === 'number' ? shop.clearanceDiscountPercent : 50;
+
+              let discountPercent = 0;
+              if (typeof p.discountPercent === 'number') {
+                discountPercent = p.discountPercent;
+              } else if (p.status === 'CLEARANCE') {
+                discountPercent = defaultClearanceDiscount;
+              } else if (showBadges) {
+                discountPercent = defaultCatalogDiscount;
+              }
+
+              const hasDiscount = discountPercent > 0;
+              const originalPrice = hasDiscount
+                ? Math.round(p.sellingPrice / (1 - discountPercent / 100))
+                : p.sellingPrice;
 
               return (
                 <div
@@ -1468,9 +1485,11 @@ export default function FrontShopClient() {
                     </div>
 
                     {/* Red Discount Badge */}
-                    <div className="absolute top-2 right-2 bg-[#DC2626] text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow">
-                      -{discountPercent}%
-                    </div>
+                    {hasDiscount && (
+                      <div className="absolute top-2 right-2 bg-[#DC2626] text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow">
+                        -{discountPercent}%
+                      </div>
+                    )}
 
                     {/* Quick Zoom Button on Hover */}
                     {p.primaryImageUrl && (
@@ -1524,9 +1543,11 @@ export default function FrontShopClient() {
                           <span className="text-sm sm:text-base font-extrabold text-[#16803C]">
                             {formatNaira(p.sellingPrice)}
                           </span>
-                          <span className="text-[10px] text-[#8A968F] line-through">
-                            {formatNaira(originalPrice)}
-                          </span>
+                          {hasDiscount && (
+                            <span className="text-[10px] text-[#8A968F] line-through">
+                              {formatNaira(originalPrice)}
+                            </span>
+                          )}
                         </div>
                         <span className="text-[10px] text-[#D96F0B] font-bold block mt-0.5">
                           Authentic Grade A
@@ -1727,26 +1748,60 @@ export default function FrontShopClient() {
                 </div>
 
                 {/* Price & Stock Display Card */}
-                <div className="p-3.5 bg-[#F8FAF9] rounded-[12px] border border-[#DDE5DF] flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#66736B] block">
-                      Price
-                    </span>
-                    <div className="text-2xl sm:text-3xl font-black text-[#16803C] leading-none mt-1">
-                      {formatNaira(detailProduct.sellingPrice)}
-                    </div>
-                  </div>
+                {(() => {
+                  const showBadges = shop.showDiscountBadges !== false;
+                  const defaultCatalogDiscount = typeof shop.defaultDiscountPercent === 'number' ? shop.defaultDiscountPercent : 30;
+                  const defaultClearanceDiscount = typeof shop.clearanceDiscountPercent === 'number' ? shop.clearanceDiscountPercent : 50;
 
-                  <div className="text-right">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#66736B] block">
-                      Availability
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 mt-1 text-xs font-bold text-[#16803C]">
-                      <span className="w-2 h-2 rounded-full bg-[#16803C] animate-pulse" />
-                      {detailProduct.quantity === 1 ? '1 piece only' : `${detailProduct.quantity} in store`}
-                    </span>
-                  </div>
-                </div>
+                  let detailDiscount = 0;
+                  if (typeof detailProduct.discountPercent === 'number') {
+                    detailDiscount = detailProduct.discountPercent;
+                  } else if (detailProduct.status === 'CLEARANCE') {
+                    detailDiscount = defaultClearanceDiscount;
+                  } else if (showBadges) {
+                    detailDiscount = defaultCatalogDiscount;
+                  }
+
+                  const hasDetailDiscount = detailDiscount > 0;
+                  const detailOriginalPrice = hasDetailDiscount
+                    ? Math.round(detailProduct.sellingPrice / (1 - detailDiscount / 100))
+                    : detailProduct.sellingPrice;
+
+                  return (
+                    <div className="p-3.5 bg-[#F8FAF9] rounded-[12px] border border-[#DDE5DF] flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#66736B] block">
+                          Price
+                        </span>
+                        <div className="flex items-baseline gap-2 mt-1">
+                          <span className="text-2xl sm:text-3xl font-black text-[#16803C] leading-none">
+                            {formatNaira(detailProduct.sellingPrice)}
+                          </span>
+                          {hasDetailDiscount && (
+                            <>
+                              <span className="text-sm text-[#8A968F] line-through font-medium">
+                                {formatNaira(detailOriginalPrice)}
+                              </span>
+                              <span className="bg-[#DC2626] text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs">
+                                -{detailDiscount}%
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#66736B] block">
+                          Availability
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 mt-1 text-xs font-bold text-[#16803C]">
+                          <span className="w-2 h-2 rounded-full bg-[#16803C] animate-pulse" />
+                          {detailProduct.quantity === 1 ? '1 piece only' : `${detailProduct.quantity} in store`}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Specifications Grid */}
                 <div className="grid grid-cols-2 gap-2 text-xs">

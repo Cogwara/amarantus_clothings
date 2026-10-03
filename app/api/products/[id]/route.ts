@@ -17,6 +17,7 @@ const updateProductSchema = z.object({
   minimumStock: z.number().int().min(0).optional(),
   imageUrl: z.string().optional(),
   images: z.array(z.string()).optional(),
+  discountPercent: z.number().int().min(0).max(95).optional().nullable(),
 });
 
 export async function GET(
@@ -108,8 +109,9 @@ export async function PUT(
         "costPrice" = COALESCE($9, "costPrice"),
         "sellingPrice" = COALESCE($10, "sellingPrice"),
         "minimumStock" = COALESCE($11, "minimumStock"),
+        "discountPercent" = CASE WHEN $12::boolean THEN $13::int ELSE "discountPercent" END,
         "updatedAt" = NOW()
-      WHERE id = $12
+      WHERE id = $14
       RETURNING *
     `,
       [
@@ -124,6 +126,8 @@ export async function PUT(
         data.costPrice,
         data.sellingPrice,
         data.minimumStock,
+        data.discountPercent !== undefined,
+        data.discountPercent ?? null,
         id,
       ]
     );

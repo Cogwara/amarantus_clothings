@@ -28,6 +28,7 @@ export async function GET(request: Request) {
         p.quantity,
         p.status,
         p."dateAdded",
+        p."discountPercent",
         pi.url as "primaryImageUrl",
         COALESCE(
           (SELECT json_agg(json_build_object('id', img.id, 'url', img.url, 'isPrimary', img."isPrimary") ORDER BY img."isPrimary" DESC, img."createdAt" ASC)
@@ -93,12 +94,26 @@ export async function GET(request: Request) {
     `);
 
     // Get shop profile
-    const shopRes = await query(`SELECT name, phone, address, currency FROM shops LIMIT 1`);
+    const shopRes = await query(`
+      SELECT 
+        name, 
+        phone, 
+        address, 
+        currency,
+        COALESCE("defaultDiscountPercent", 30) as "defaultDiscountPercent",
+        COALESCE("clearanceDiscountPercent", 50) as "clearanceDiscountPercent",
+        COALESCE("showDiscountBadges", true) as "showDiscountBadges"
+      FROM shops 
+      LIMIT 1
+    `);
     const shop = shopRes.rows[0] || {
       name: 'Amarantus Clothings',
       phone: '+234 9065043549',
       address: 'Plot 78 Gbazango Kubwa FCT',
       currency: 'NGN',
+      defaultDiscountPercent: 30,
+      clearanceDiscountPercent: 50,
+      showDiscountBadges: true,
     };
 
     return NextResponse.json({

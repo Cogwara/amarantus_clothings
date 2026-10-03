@@ -100,6 +100,7 @@ export default function InventoryPage() {
   const [newProdPrice, setNewProdPrice] = React.useState<number>(7500);
   const [newProdQty, setNewProdQty] = React.useState<number>(5);
   const [newProdMinStock, setNewProdMinStock] = React.useState<number>(2);
+  const [newProdDiscount, setNewProdDiscount] = React.useState<string>('');
   const [newProdImages, setNewProdImages] = React.useState<string[]>([]);
   const [submittingProduct, setSubmittingProduct] = React.useState(false);
   const [productError, setProductError] = React.useState('');
@@ -116,6 +117,7 @@ export default function InventoryPage() {
   const [editProdCost, setEditProdCost] = React.useState<number>(3000);
   const [editProdPrice, setEditProdPrice] = React.useState<number>(7500);
   const [editProdMinStock, setEditProdMinStock] = React.useState<number>(2);
+  const [editProdDiscount, setEditProdDiscount] = React.useState<string>('');
   const [editProdImages, setEditProdImages] = React.useState<string[]>([]);
   const [submittingEdit, setSubmittingEdit] = React.useState(false);
   const [editProductError, setEditProductError] = React.useState('');
@@ -235,6 +237,7 @@ export default function InventoryPage() {
         sellingPrice: Number(newProdPrice),
         quantity: Number(newProdQty),
         minimumStock: Number(newProdMinStock),
+        discountPercent: newProdDiscount !== '' ? Number(newProdDiscount) : null,
         images: newProdImages,
         imageUrl: newProdImages[0] || undefined,
       };
@@ -269,6 +272,7 @@ export default function InventoryPage() {
     setNewProdQty(5);
     setNewProdCost(3000);
     setNewProdPrice(7500);
+    setNewProdDiscount('');
   };
 
   // Open edit product modal
@@ -284,6 +288,11 @@ export default function InventoryPage() {
     setEditProdCost(prod.costPrice);
     setEditProdPrice(prod.sellingPrice);
     setEditProdMinStock(prod.minimumStock);
+    setEditProdDiscount(
+      prod.discountPercent !== undefined && prod.discountPercent !== null
+        ? String(prod.discountPercent)
+        : ''
+    );
 
     const existingImages: string[] = [];
     if (prod.images && Array.isArray(prod.images) && prod.images.length > 0) {
@@ -319,6 +328,7 @@ export default function InventoryPage() {
         costPrice: Number(editProdCost),
         sellingPrice: Number(editProdPrice),
         minimumStock: Number(editProdMinStock),
+        discountPercent: editProdDiscount !== '' ? Number(editProdDiscount) : null,
         images: editProdImages,
         imageUrl: editProdImages[0] || undefined,
       };
@@ -630,9 +640,16 @@ export default function InventoryPage() {
                       <div className="pt-2 border-t border-[#F0F4F1] flex items-baseline justify-between">
                         <div>
                           <p className="text-[10px] text-[#66736B]">Selling Price</p>
-                          <p className="text-base font-bold text-[#16803C]">
-                            {formatNaira(p.sellingPrice)}
-                          </p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-base font-bold text-[#16803C]">
+                              {formatNaira(p.sellingPrice)}
+                            </p>
+                            {typeof p.discountPercent === 'number' && (
+                              <span className="text-[10px] font-bold text-[#DC2626] bg-[#FFF5F5] border border-red-200 px-1.5 py-0.2 rounded-full" title={`Custom Storefront Discount: -${p.discountPercent}%`}>
+                                -{p.discountPercent}%
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         {currentUser?.role !== 'STAFF' && (
@@ -774,8 +791,15 @@ export default function InventoryPage() {
                         <td className="py-3 px-3 text-right text-[#66736B]">
                           {formatNaira(p.costPrice)}
                         </td>
-                        <td className="py-3 px-3 text-right font-bold text-[#16803C]">
-                          {formatNaira(p.sellingPrice)}
+                        <td className="py-3 px-3 text-right">
+                          <span className="font-bold text-[#16803C]">
+                            {formatNaira(p.sellingPrice)}
+                          </span>
+                          {typeof p.discountPercent === 'number' && (
+                            <span className="block text-[9px] font-bold text-[#DC2626]">
+                              -{p.discountPercent}% front
+                            </span>
+                          )}
                         </td>
                         <td className="py-3 px-3 text-center font-bold text-base">
                           {p.quantity}
@@ -989,6 +1013,19 @@ export default function InventoryPage() {
               />
             </div>
 
+            <div>
+              <Input
+                label="Storefront Discount % (Optional)"
+                type="number"
+                min="0"
+                max="95"
+                placeholder="Default (e.g. 30%)"
+                value={newProdDiscount}
+                onChange={(e) => setNewProdDiscount(e.target.value)}
+                helperText="Leave empty to use the shop default discount badge"
+              />
+            </div>
+
             <div className="sm:col-span-2">
               <ImageUpload
                 label="Product Photos (Upload multiple photos from device or enter URLs)"
@@ -1155,6 +1192,19 @@ export default function InventoryPage() {
                 min="1"
                 value={editProdMinStock}
                 onChange={(e) => setEditProdMinStock(Number(e.target.value))}
+              />
+            </div>
+
+            <div>
+              <Input
+                label="Storefront Discount % (Optional)"
+                type="number"
+                min="0"
+                max="95"
+                placeholder="Default (e.g. 30%)"
+                value={editProdDiscount}
+                onChange={(e) => setEditProdDiscount(e.target.value)}
+                helperText="Leave empty to use the shop default discount badge"
               />
             </div>
 

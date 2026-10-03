@@ -19,6 +19,7 @@ const createProductSchema = z.object({
   minimumStock: z.number().int().min(0).default(3),
   imageUrl: z.string().optional(),
   images: z.array(z.string()).optional(),
+  discountPercent: z.number().int().min(0).max(95).optional().nullable(),
 });
 
 export async function GET(request: Request) {
@@ -49,6 +50,7 @@ export async function GET(request: Request) {
         p.quantity,
         p."minimumStock",
         p.status,
+        p."discountPercent",
         p."dateAdded",
         p."createdAt",
         p."updatedAt",
@@ -168,8 +170,8 @@ export async function POST(request: Request) {
         INSERT INTO products (
           id, sku, name, "categoryId", description, size, gender, condition,
           brand, color, "costPrice", "sellingPrice", quantity, "minimumStock",
-          status, "dateAdded", "createdAt", "updatedAt"
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW(), NOW())
+          status, "discountPercent", "dateAdded", "createdAt", "updatedAt"
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW(), NOW())
         RETURNING *
       `,
         [
@@ -188,6 +190,7 @@ export async function POST(request: Request) {
           data.quantity,
           data.minimumStock,
           initialStatus,
+          data.discountPercent ?? null,
         ]
       );
 

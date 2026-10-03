@@ -23,6 +23,10 @@ import {
   Trash2,
   Tag,
   Truck,
+  Percent,
+  TrendingDown,
+  Eye,
+  Check,
 } from 'lucide-react';
 import { Shop } from '@/lib/types';
 
@@ -39,6 +43,13 @@ export default function SettingsPage() {
   const [currency, setCurrency] = React.useState('NGN');
   const [savingShop, setSavingShop] = React.useState(false);
   const [shopMessage, setShopMessage] = React.useState('');
+
+  // Storefront Discount Badges Settings
+  const [defaultDiscount, setDefaultDiscount] = React.useState(30);
+  const [clearanceDiscount, setClearanceDiscount] = React.useState(50);
+  const [showDiscountBadges, setShowDiscountBadges] = React.useState(true);
+  const [savingDiscounts, setSavingDiscounts] = React.useState(false);
+  const [discountMessage, setDiscountMessage] = React.useState('');
 
   // Demo Reset
   const [resettingDemo, setResettingDemo] = React.useState(false);
@@ -74,6 +85,9 @@ export default function SettingsPage() {
         setPhone(sRes.shop.phone);
         setAddress(sRes.shop.address);
         setCurrency(sRes.shop.currency || 'NGN');
+        setDefaultDiscount(typeof sRes.shop.defaultDiscountPercent === 'number' ? sRes.shop.defaultDiscountPercent : 30);
+        setClearanceDiscount(typeof sRes.shop.clearanceDiscountPercent === 'number' ? sRes.shop.clearanceDiscountPercent : 50);
+        setShowDiscountBadges(sRes.shop.showDiscountBadges !== false);
       }
       if (sRes?.stats) setStats(sRes.stats);
       if (catRes?.categories) setCategories(catRes.categories);
@@ -182,6 +196,39 @@ export default function SettingsPage() {
       }
     } finally {
       setSavingShop(false);
+    }
+  };
+
+  const handleSaveDiscounts = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingDiscounts(true);
+    setDiscountMessage('');
+
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: shop?.name || name,
+          phone: shop?.phone || phone,
+          address: shop?.address || address,
+          currency: shop?.currency || currency,
+          defaultDiscountPercent: Number(defaultDiscount),
+          clearanceDiscountPercent: Number(clearanceDiscount),
+          showDiscountBadges,
+        }),
+      });
+
+      if (res.ok) {
+        setDiscountMessage('Storefront discount badge settings saved successfully!');
+        setTimeout(() => setDiscountMessage(''), 4000);
+        loadData();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to update discount settings');
+      }
+    } finally {
+      setSavingDiscounts(false);
     }
   };
 
@@ -376,6 +423,198 @@ export default function SettingsPage() {
                 Open Deals Editor
               </Button>
             </Link>
+          </CardContent>
+        </Card>
+
+        {/* Storefront Discount Badges & Markdowns Customizer Card */}
+        <Card className="border-[#FCD9B8] overflow-hidden shadow-xs">
+          <CardHeader className="bg-[#FFF8F5] p-5 border-b border-[#FCD9B8]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-full bg-[#DC2626] text-white flex items-center justify-center shrink-0 shadow-sm">
+                  <Percent className="w-5 h-5 stroke-[2.5]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-base text-[#9A2105]">
+                      Storefront Discount Badges & Markdowns
+                    </CardTitle>
+                    <Badge variant="orange" className="text-[10px] uppercase font-bold">
+                      Item Pricing
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-[#C2410C] mt-0.5">
+                    Control the promotional -30% badge and crossed-out original prices shown on clothing items across the front store
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-5 space-y-6">
+            {discountMessage && (
+              <div className="p-3 rounded-[10px] bg-[#EAF7EE] border border-[#C5E9CE] text-xs font-bold text-[#16803C] flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{discountMessage}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveDiscounts} className="space-y-6">
+              {/* Interactive Live Preview Box */}
+              <div className="p-4 bg-[#FAFBFB] rounded-[12px] border border-[#E5EBE7] flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#17211B]">
+                    <Eye className="w-4 h-4 text-[#DC2626]" />
+                    <span>Live Customer Preview</span>
+                  </div>
+                  <p className="text-xs text-[#66736B]">
+                    This is how item prices and discount badges appear to customers on your front store:
+                  </p>
+                </div>
+
+                {/* Sample Product Card Mockup */}
+                <div className="w-48 bg-white rounded-[12px] border border-[#DDE5DF] p-3 shadow-xs shrink-0 select-none">
+                  <div className="relative aspect-square w-full rounded-[8px] bg-gray-100 overflow-hidden mb-2 flex items-center justify-center">
+                    <span className="text-xs font-bold text-gray-400">Sample Dress</span>
+                    {showDiscountBadges && defaultDiscount > 0 ? (
+                      <div className="absolute top-1.5 right-1.5 bg-[#DC2626] text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-xs">
+                        -{defaultDiscount}%
+                      </div>
+                    ) : (
+                      <div className="absolute top-1.5 right-1.5 bg-gray-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                        No Badge
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs font-bold text-[#17211B] truncate">Silk Vintage Gown</p>
+                  <div className="mt-1 flex items-baseline gap-1.5">
+                    <span className="text-sm font-extrabold text-[#16803C]">₦5,000</span>
+                    {showDiscountBadges && defaultDiscount > 0 && (
+                      <span className="text-[10px] text-[#8A968F] line-through">
+                        ₦{Math.round(5000 / (1 - defaultDiscount / 100)).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Master Toggle */}
+              <div className="p-4 bg-white rounded-[12px] border border-[#DDE5DF] flex items-center justify-between gap-4">
+                <div>
+                  <h4 className="font-bold text-xs text-[#17211B]">
+                    Show Discount Badges on Catalog Items
+                  </h4>
+                  <p className="text-[11px] text-[#66736B] mt-0.5">
+                    When enabled, catalog items show your configured discount % and strikethrough price. When disabled, only the direct price is shown.
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={showDiscountBadges}
+                    onChange={(e) => setShowDiscountBadges(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#16803C]"></div>
+                </label>
+              </div>
+
+              {/* Default Catalog Discount */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-[#17211B]">
+                    Catalog Items Discount Percentage
+                  </label>
+                  <span className="text-xs font-mono font-bold text-[#DC2626]">
+                    Current: -{defaultDiscount}% OFF
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setDefaultDiscount(0)}
+                    className={`px-3 py-1.5 rounded-[8px] text-xs font-bold transition-all ${
+                      defaultDiscount === 0
+                        ? 'bg-[#17211B] text-white shadow-xs'
+                        : 'bg-white border border-[#DDE5DF] text-[#66736B] hover:border-[#17211B]'
+                    }`}
+                  >
+                    Off (0%)
+                  </button>
+                  {[10, 15, 20, 25, 30, 35, 40, 50].map((pct) => (
+                    <button
+                      key={pct}
+                      type="button"
+                      onClick={() => setDefaultDiscount(pct)}
+                      className={`px-3 py-1.5 rounded-[8px] text-xs font-bold transition-all ${
+                        defaultDiscount === pct
+                          ? 'bg-[#DC2626] text-white shadow-xs scale-105'
+                          : 'bg-white border border-[#DDE5DF] text-[#66736B] hover:border-[#DC2626]'
+                      }`}
+                    >
+                      -{pct}%
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="text-xs text-[#66736B]">Or enter custom percent:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="95"
+                    value={defaultDiscount}
+                    onChange={(e) => setDefaultDiscount(parseInt(e.target.value) || 0)}
+                    className="w-24 px-3 py-1 bg-white border border-[#DDE5DF] rounded-[8px] text-xs text-[#17211B] font-bold focus:border-[#DC2626] focus:outline-none"
+                  />
+                  <span className="text-xs text-[#66736B]">%</span>
+                </div>
+              </div>
+
+              {/* Clearance Deals Discount */}
+              <div className="space-y-2 pt-3 border-t border-[#F0F4F1]">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-[#17211B]">
+                    Clearance Deals Discount Percentage
+                  </label>
+                  <span className="text-xs font-mono font-bold text-[#D96F0B]">
+                    Clearance: -{clearanceDiscount}% OFF
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {[30, 40, 50, 60, 70].map((pct) => (
+                    <button
+                      key={pct}
+                      type="button"
+                      onClick={() => setClearanceDiscount(pct)}
+                      className={`px-3 py-1.5 rounded-[8px] text-xs font-bold transition-all ${
+                        clearanceDiscount === pct
+                          ? 'bg-[#D96F0B] text-white shadow-xs scale-105'
+                          : 'bg-white border border-[#DDE5DF] text-[#66736B] hover:border-[#D96F0B]'
+                      }`}
+                    >
+                      -{pct}%
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex justify-end">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="md"
+                  className="font-bold bg-[#DC2626] hover:bg-red-700"
+                  isLoading={savingDiscounts}
+                >
+                  <Check className="w-4 h-4 mr-1" />
+                  <span>Save Discount Badge Settings</span>
+                </Button>
+              </div>
+            </form>
           </CardContent>
         </Card>
 
