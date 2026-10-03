@@ -77,6 +77,7 @@ export async function ensureDiscountColumns() {
       ALTER TABLE shops ADD COLUMN IF NOT EXISTS "accountNumber" VARCHAR(50) DEFAULT '6542969118';
       ALTER TABLE shops ADD COLUMN IF NOT EXISTS "accountName" VARCHAR(255) DEFAULT 'Amarachi Jane Awa';
       ALTER TABLE products ADD COLUMN IF NOT EXISTS "discountPercent" INT;
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS "design" TEXT;
 
       UPDATE shops
       SET 

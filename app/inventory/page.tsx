@@ -96,6 +96,7 @@ export default function InventoryPage() {
   const [newProdCondition, setNewProdCondition] = React.useState<Condition>('EXCELLENT');
   const [newProdBrand, setNewProdBrand] = React.useState('');
   const [newProdColor, setNewProdColor] = React.useState('');
+  const [newProdDesign, setNewProdDesign] = React.useState('');
   const [newProdCost, setNewProdCost] = React.useState<number>(3000);
   const [newProdPrice, setNewProdPrice] = React.useState<number>(7500);
   const [newProdQty, setNewProdQty] = React.useState<number>(5);
@@ -114,6 +115,7 @@ export default function InventoryPage() {
   const [editProdCondition, setEditProdCondition] = React.useState<Condition>('EXCELLENT');
   const [editProdBrand, setEditProdBrand] = React.useState('');
   const [editProdColor, setEditProdColor] = React.useState('');
+  const [editProdDesign, setEditProdDesign] = React.useState('');
   const [editProdCost, setEditProdCost] = React.useState<number>(3000);
   const [editProdPrice, setEditProdPrice] = React.useState<number>(7500);
   const [editProdMinStock, setEditProdMinStock] = React.useState<number>(2);
@@ -233,6 +235,7 @@ export default function InventoryPage() {
         condition: newProdCondition,
         brand: newProdBrand.trim() || undefined,
         color: newProdColor.trim() || undefined,
+        design: newProdDesign.trim() || undefined,
         costPrice: Number(newProdCost),
         sellingPrice: Number(newProdPrice),
         quantity: Number(newProdQty),
@@ -271,6 +274,7 @@ export default function InventoryPage() {
     setNewProdCondition('EXCELLENT');
     setNewProdBrand('');
     setNewProdColor('');
+    setNewProdDesign('');
     setNewProdImages([]);
     setNewProdQty(5);
     setNewProdCost(3000);
@@ -288,6 +292,7 @@ export default function InventoryPage() {
     setEditProdCondition(prod.condition);
     setEditProdBrand(prod.brand || '');
     setEditProdColor(prod.color || '');
+    setEditProdDesign(prod.design || '');
     setEditProdCost(prod.costPrice);
     setEditProdPrice(prod.sellingPrice);
     setEditProdMinStock(prod.minimumStock);
@@ -328,6 +333,7 @@ export default function InventoryPage() {
         condition: editProdCondition,
         brand: editProdBrand.trim() || null,
         color: editProdColor.trim() || null,
+        design: editProdDesign.trim() || null,
         costPrice: Number(editProdCost),
         sellingPrice: Number(editProdPrice),
         minimumStock: Number(editProdMinStock),
@@ -633,10 +639,16 @@ export default function InventoryPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 text-xs text-[#66736B]">
+                      <div className="flex items-center gap-2 text-xs text-[#66736B] flex-wrap">
                         <span>Size: <strong className="text-[#17211B]">{p.size}</strong></span>
                         <span>•</span>
                         <span>Brand: <strong className="text-[#17211B]">{p.brand || 'Unbranded'}</strong></span>
+                        {p.design && (
+                          <>
+                            <span>•</span>
+                            <span>Design: <strong className="text-[#17211B]">{p.design}</strong></span>
+                          </>
+                        )}
                       </div>
 
                       {/* Pricing Box */}
@@ -783,7 +795,7 @@ export default function InventoryPage() {
                             <div>
                               <p className="font-bold text-[#17211B]">{p.name}</p>
                               <p className="text-[10px] text-[#66736B]">
-                                {p.sku} {p.brand ? `• ${p.brand}` : ''}
+                                {p.sku} {p.brand ? `• ${p.brand}` : ''} {p.design ? `• ${p.design}` : ''}
                               </p>
                             </div>
                           </div>
@@ -985,6 +997,15 @@ export default function InventoryPage() {
 
             <div>
               <Input
+                label="Design / Style"
+                placeholder="e.g. Vintage Floral, Plain, Striped, Graphic, Pleated"
+                value={newProdDesign}
+                onChange={(e) => setNewProdDesign(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Input
                 label="Cost Price (₦)"
                 type="number"
                 min="0"
@@ -1177,6 +1198,15 @@ export default function InventoryPage() {
                 placeholder="e.g. Navy Blue, Floral Cream"
                 value={editProdColor}
                 onChange={(e) => setEditProdColor(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Input
+                label="Design / Style"
+                placeholder="e.g. Vintage Floral, Plain, Striped, Graphic, Pleated"
+                value={editProdDesign}
+                onChange={(e) => setEditProdDesign(e.target.value)}
               />
             </div>
 

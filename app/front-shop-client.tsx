@@ -361,7 +361,8 @@ export default function FrontShopClient() {
   const getWhatsAppOrderLink = (prod: Product) => {
     const rawPhone = shop.phone.replace(/\D/g, '');
     const cleanPhone = rawPhone.startsWith('0') ? '234' + rawPhone.slice(1) : rawPhone;
-    const text = `Hello ${shop.name}! 👋\n\nI want to order this item from your Front Shop:\n\n👗 *${prod.name}*\n📏 Size: ${prod.size}\n🏷️ Price: ${formatNaira(prod.sellingPrice)}\n⭐ Condition: ${prod.condition}\n\nIs it still available for delivery?`;
+    const designText = prod.design ? `\n🎨 Design: ${prod.design}` : '';
+    const text = `Hello ${shop.name}! 👋\n\nI want to order this item from your Front Shop:\n\n👗 *${prod.name}*\n📏 Size: ${prod.size}${designText}\n🏷️ Price: ${formatNaira(prod.sellingPrice)}\n⭐ Condition: ${prod.condition}\n\nIs it still available for delivery?`;
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
   };
 
@@ -1824,6 +1825,12 @@ export default function FrontShopClient() {
                     <div className="p-2.5 rounded-[10px] bg-white border border-[#DDE5DF]">
                       <span className="text-[#66736B] block text-[11px]">Section</span>
                       <span className="font-bold text-[#17211B] text-sm mt-0.5 block">{detailProduct.gender}</span>
+                    </div>
+                  )}
+                  {detailProduct.design && (
+                    <div className="p-2.5 rounded-[10px] bg-white border border-[#DDE5DF]">
+                      <span className="text-[#66736B] block text-[11px]">Design / Style</span>
+                      <span className="font-bold text-[#17211B] text-sm mt-0.5 block">{detailProduct.design}</span>
                     </div>
                   )}
                 </div>

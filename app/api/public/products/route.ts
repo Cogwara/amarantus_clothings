@@ -26,6 +26,7 @@ export async function GET(request: Request) {
         p.condition,
         p.brand,
         p.color,
+        p.design,
         p."sellingPrice",
         p.quantity,
         p.status,
@@ -48,7 +49,7 @@ export async function GET(request: Request) {
     let paramIndex = 1;
 
     if (search.trim()) {
-      sql += ` AND (p.name ILIKE $${paramIndex} OR p.sku ILIKE $${paramIndex} OR p.brand ILIKE $${paramIndex} OR c.name ILIKE $${paramIndex})`;
+      sql += ` AND (p.name ILIKE $${paramIndex} OR p.sku ILIKE $${paramIndex} OR p.brand ILIKE $${paramIndex} OR p.design ILIKE $${paramIndex} OR c.name ILIKE $${paramIndex})`;
       params.push(`%${search.trim()}%`);
       paramIndex++;
     }

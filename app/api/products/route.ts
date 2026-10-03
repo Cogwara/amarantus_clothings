@@ -13,6 +13,7 @@ const createProductSchema = z.object({
   condition: z.enum(['EXCELLENT', 'VERY_GOOD', 'GOOD', 'FAIR']).default('EXCELLENT'),
   brand: z.string().optional(),
   color: z.string().optional(),
+  design: z.string().optional().nullable(),
   costPrice: z.number().min(0, 'Cost price must be positive'),
   sellingPrice: z.number().min(0, 'Selling price must be positive'),
   quantity: z.number().int().min(0, 'Initial quantity cannot be negative'),
@@ -47,6 +48,7 @@ export async function GET(request: Request) {
         p.condition,
         p.brand,
         p.color,
+        p.design,
         p."costPrice",
         p."sellingPrice",
         p.quantity,
@@ -74,7 +76,7 @@ export async function GET(request: Request) {
     let paramIndex = 1;
 
     if (search.trim()) {
-      sql += ` AND (p.name ILIKE $${paramIndex} OR p.sku ILIKE $${paramIndex} OR p.brand ILIKE $${paramIndex} OR c.name ILIKE $${paramIndex})`;
+      sql += ` AND (p.name ILIKE $${paramIndex} OR p.sku ILIKE $${paramIndex} OR p.brand ILIKE $${paramIndex} OR p.design ILIKE $${paramIndex} OR c.name ILIKE $${paramIndex})`;
       params.push(`%${search.trim()}%`);
       paramIndex++;
     }
@@ -183,9 +185,9 @@ export async function POST(request: Request) {
         `
         INSERT INTO products (
           id, sku, name, "categoryId", description, size, gender, condition,
-          brand, color, "costPrice", "sellingPrice", quantity, "minimumStock",
+          brand, color, design, "costPrice", "sellingPrice", quantity, "minimumStock",
           status, "discountPercent", "dateAdded", "createdAt", "updatedAt"
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW(), NOW())
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW(), NOW(), NOW())
         RETURNING *
       `,
         [
@@ -199,6 +201,7 @@ export async function POST(request: Request) {
           data.condition,
           data.brand || null,
           data.color || null,
+          data.design || null,
           data.costPrice,
           data.sellingPrice,
           data.quantity,

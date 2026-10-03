@@ -108,6 +108,7 @@ export interface Product {
   condition: Condition;
   brand?: string | null;
   color?: string | null;
+  design?: string | null;
   costPrice: number;
   sellingPrice: number;
   quantity: number;

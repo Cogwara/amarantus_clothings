@@ -12,6 +12,7 @@ const updateProductSchema = z.object({
   condition: z.enum(['EXCELLENT', 'VERY_GOOD', 'GOOD', 'FAIR']).optional(),
   brand: z.string().optional().nullable(),
   color: z.string().optional().nullable(),
+  design: z.string().optional().nullable(),
   costPrice: z.number().min(0).optional(),
   sellingPrice: z.number().min(0).optional(),
   minimumStock: z.number().int().min(0).optional(),
@@ -108,12 +109,13 @@ export async function PUT(
         condition = COALESCE($6, condition),
         brand = COALESCE($7, brand),
         color = COALESCE($8, color),
-        "costPrice" = COALESCE($9, "costPrice"),
-        "sellingPrice" = COALESCE($10, "sellingPrice"),
-        "minimumStock" = COALESCE($11, "minimumStock"),
-        "discountPercent" = CASE WHEN $12::boolean THEN $13::int ELSE "discountPercent" END,
+        design = CASE WHEN $9::boolean THEN $10::text ELSE design END,
+        "costPrice" = COALESCE($11, "costPrice"),
+        "sellingPrice" = COALESCE($12, "sellingPrice"),
+        "minimumStock" = COALESCE($13, "minimumStock"),
+        "discountPercent" = CASE WHEN $14::boolean THEN $15::int ELSE "discountPercent" END,
         "updatedAt" = NOW()
-      WHERE id = $14
+      WHERE id = $16
       RETURNING *
     `,
       [
@@ -125,6 +127,8 @@ export async function PUT(
         data.condition,
         data.brand,
         data.color,
+        data.design !== undefined,
+        data.design ?? null,
         data.costPrice,
         data.sellingPrice,
         data.minimumStock,
