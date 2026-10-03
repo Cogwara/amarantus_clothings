@@ -84,6 +84,22 @@ export async function ensureDiscountColumns() {
         "accountNumber" = COALESCE("accountNumber", '6542969118'),
         "accountName" = COALESCE("accountName", 'Amarachi Jane Awa')
       WHERE "bankName" IS NULL OR "accountNumber" IS NULL OR "accountName" IS NULL;
+
+      CREATE TABLE IF NOT EXISTS shop_bank_accounts (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        bank_name VARCHAR(255) NOT NULL,
+        account_number VARCHAR(50) NOT NULL,
+        account_name VARCHAR(255) NOT NULL,
+        is_primary BOOLEAN DEFAULT false,
+        is_active BOOLEAN DEFAULT true,
+        display_order INT DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+
+      INSERT INTO shop_bank_accounts (bank_name, account_number, account_name, is_primary, is_active, display_order)
+      SELECT 'OPAY', '6542969118', 'Amarachi Jane Awa', true, true, 0
+      WHERE NOT EXISTS (SELECT 1 FROM shop_bank_accounts);
     `);
     discountColumnsEnsured = true;
   } catch (err) {

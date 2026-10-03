@@ -244,11 +244,32 @@ export async function POST(request: Request) {
       address: 'Plot 78 Gbazango Kubwa FCT',
     };
 
-    const bankDetails = {
-      bankName: shop?.bankName || 'OPAY',
-      accountNumber: shop?.accountNumber || '6542969118',
-      accountName: shop?.accountName || 'Amarachi Jane Awa',
-    };
+    let bankAccounts: any[] = [];
+    try {
+      const bankRes = await query(
+        `SELECT id, bank_name as "bankName", account_number as "accountNumber", account_name as "accountName", is_primary as "isPrimary"
+         FROM shop_bank_accounts
+         WHERE is_active = true
+         ORDER BY is_primary DESC, display_order ASC, created_at ASC`
+      );
+      bankAccounts = bankRes.rows;
+    } catch {
+      // Fallback
+    }
+
+    if (bankAccounts.length === 0) {
+      bankAccounts = [
+        {
+          id: 'default',
+          bankName: shop?.bankName || 'OPAY',
+          accountNumber: shop?.accountNumber || '6542969118',
+          accountName: shop?.accountName || 'Amarachi Jane Awa',
+          isPrimary: true,
+        },
+      ];
+    }
+
+    const primaryBank = bankAccounts.find((b) => b.isPrimary) || bankAccounts[0];
 
     return NextResponse.json({
       success: true,
@@ -256,7 +277,8 @@ export async function POST(request: Request) {
       totalAmount: result.totalAmount,
       order: result,
       shop: shopProfile,
-      bankDetails,
+      bankDetails: primaryBank,
+      bankAccounts,
     });
   } catch (error: any) {
     console.error('Front shop order error:', error);

@@ -63,8 +63,30 @@ export async function GET() {
         (SELECT COUNT(*) FROM users)::int as "totalUsers"
     `);
 
+    // Fetch all bank accounts
+    let bankAccounts: any[] = [];
+    try {
+      const bankRes = await query(`
+        SELECT 
+          id, 
+          bank_name as "bankName", 
+          account_number as "accountNumber", 
+          account_name as "accountName", 
+          is_primary as "isPrimary", 
+          is_active as "isActive", 
+          display_order as "displayOrder",
+          created_at as "createdAt"
+        FROM shop_bank_accounts
+        ORDER BY is_primary DESC, display_order ASC, created_at ASC
+      `);
+      bankAccounts = bankRes.rows;
+    } catch (e) {
+      console.error('Failed to query bank accounts in settings:', e);
+    }
+
     return NextResponse.json({
       shop,
+      bankAccounts,
       stats: statsRes.rows[0],
     });
   } catch (error: any) {

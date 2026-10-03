@@ -154,6 +154,27 @@ export async function GET(request: Request) {
       shop.accountName = shop.accountName || 'Amarachi Jane Awa';
     }
 
+    // Attach active bank accounts
+    try {
+      const bankRes = await query(`
+        SELECT id, bank_name as "bankName", account_number as "accountNumber", account_name as "accountName", is_primary as "isPrimary"
+        FROM shop_bank_accounts
+        WHERE is_active = true
+        ORDER BY is_primary DESC, display_order ASC, created_at ASC
+      `);
+      shop.bankAccounts = bankRes.rows;
+    } catch {
+      shop.bankAccounts = [
+        {
+          id: 'default',
+          bankName: shop.bankName || 'OPAY',
+          accountNumber: shop.accountNumber || '6542969118',
+          accountName: shop.accountName || 'Amarachi Jane Awa',
+          isPrimary: true,
+        },
+      ];
+    }
+
     return NextResponse.json({
       products: res.rows,
       categories: catRes.rows,

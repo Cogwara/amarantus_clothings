@@ -60,8 +60,21 @@ export interface Shop {
   bankName?: string;
   accountNumber?: string;
   accountName?: string;
+  bankAccounts?: BankAccount[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface BankAccount {
+  id: string;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  isPrimary: boolean;
+  isActive: boolean;
+  displayOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Category {

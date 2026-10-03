@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Modal } from '@/components/ui/modal';
 import {
   Settings as SettingsIcon,
   Store,
@@ -45,11 +46,16 @@ export default function SettingsPage() {
   const [savingShop, setSavingShop] = React.useState(false);
   const [shopMessage, setShopMessage] = React.useState('');
 
-  // Shop Bank Account Settings
-  const [bankName, setBankName] = React.useState('OPAY');
-  const [accountNumber, setAccountNumber] = React.useState('6542969118');
-  const [accountName, setAccountName] = React.useState('Amarachi Jane Awa');
-  const [savingBank, setSavingBank] = React.useState(false);
+  // Multiple Bank Accounts Settings
+  const [bankAccounts, setBankAccounts] = React.useState<any[]>([]);
+  const [addBankModal, setAddBankModal] = React.useState(false);
+  const [newBankName, setNewBankName] = React.useState('OPAY');
+  const [newAccNumber, setNewAccNumber] = React.useState('');
+  const [newAccName, setNewAccName] = React.useState('Amarachi Jane Awa');
+  const [newIsPrimary, setNewIsPrimary] = React.useState(false);
+  const [submittingBank, setSubmittingBank] = React.useState(false);
+  const [settingPrimaryId, setSettingPrimaryId] = React.useState<string | null>(null);
+  const [deletingBankId, setDeletingBankId] = React.useState<string | null>(null);
   const [bankMessage, setBankMessage] = React.useState('');
 
   // Storefront Discount Badges Settings
@@ -96,9 +102,7 @@ export default function SettingsPage() {
         setDefaultDiscount(typeof sRes.shop.defaultDiscountPercent === 'number' ? sRes.shop.defaultDiscountPercent : 30);
         setClearanceDiscount(typeof sRes.shop.clearanceDiscountPercent === 'number' ? sRes.shop.clearanceDiscountPercent : 50);
         setShowDiscountBadges(sRes.shop.showDiscountBadges !== false);
-        setBankName(sRes.shop.bankName || 'OPAY');
-        setAccountNumber(sRes.shop.accountNumber || '6542969118');
-        setAccountName(sRes.shop.accountName || 'Amarachi Jane Awa');
+        setBankAccounts(sRes.bankAccounts || []);
       }
       if (sRes?.stats) setStats(sRes.stats);
       if (catRes?.categories) setCategories(catRes.categories);
@@ -243,36 +247,71 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveBank = async (e: React.FormEvent) => {
+  const handleAddBankAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!accountNumber.trim() || !accountName.trim()) {
-      alert('Please provide an account number and account name.');
+    if (!newBankName.trim() || !newAccNumber.trim() || !newAccName.trim()) {
+      alert('Please fill in bank name, account number, and account name.');
       return;
     }
-    setSavingBank(true);
-    setBankMessage('');
+    setSubmittingBank(true);
     try {
-      const res = await fetch('/api/settings', {
-        method: 'PUT',
+      const res = await fetch('/api/bank-accounts', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          bankName: bankName.trim(),
-          accountNumber: accountNumber.trim(),
-          accountName: accountName.trim(),
+          bankName: newBankName.trim(),
+          accountNumber: newAccNumber.trim(),
+          accountName: newAccName.trim(),
+          isPrimary: newIsPrimary,
         }),
       });
-      if (res.ok) {
-        setBankMessage('Bank transfer settings saved! Customers will now see this account on checkout.');
-        setTimeout(() => setBankMessage(''), 5000);
-        loadData();
-      } else {
-        const err = await res.json();
-        alert(err.error || 'Failed to update bank details');
-      }
-    } catch {
-      alert('Error updating bank details');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to add bank account');
+      setBankMessage(`Bank account "${newBankName}" added successfully!`);
+      setTimeout(() => setBankMessage(''), 4000);
+      setAddBankModal(false);
+      setNewAccNumber('');
+      setNewIsPrimary(false);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || 'Error adding bank account');
     } finally {
-      setSavingBank(false);
+      setSubmittingBank(false);
+    }
+  };
+
+  const handleSetPrimaryAccount = async (id: string) => {
+    setSettingPrimaryId(id);
+    try {
+      const res = await fetch('/api/bank-accounts', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, isPrimary: true }),
+      });
+      if (res.ok) {
+        setBankMessage('Primary bank account updated! This account is now primary for customer transfers.');
+        setTimeout(() => setBankMessage(''), 4000);
+        loadData();
+      }
+    } finally {
+      setSettingPrimaryId(null);
+    }
+  };
+
+  const handleDeleteBankAccount = async (acc: any) => {
+    if (!confirm(`Are you sure you want to delete ${acc.bankName} (${acc.accountNumber})?`)) return;
+    setDeletingBankId(acc.id);
+    try {
+      const res = await fetch(`/api/bank-accounts?id=${acc.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete account');
+      setBankMessage('Bank account deleted successfully.');
+      setTimeout(() => setBankMessage(''), 4000);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || 'Error deleting bank account');
+    } finally {
+      setDeletingBankId(null);
     }
   };
 
@@ -391,19 +430,44 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Payment & Bank Transfer Settings */}
+        {/* Payment & Multiple Bank Accounts Settings */}
         <Card className="border-[#DDE5DF] overflow-hidden shadow-xs">
           <CardHeader className="pb-3 border-b border-[#F0F4F1] bg-[#F8FAF9]">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-[8px] bg-[#16803C] text-white">
-                <CreditCard className="w-5 h-5" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-[8px] bg-[#16803C] text-white">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <CardTitle>Bank Accounts for Customer Payments</CardTitle>
+                    <Badge variant="green" className="text-[10px] font-bold">
+                      {bankAccounts.length} Active {bankAccounts.length === 1 ? 'Account' : 'Accounts'}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-[#66736B]">
+                    Manage multiple bank accounts (e.g. OPAY, Moniepoint, GTBank) displayed to shoppers on checkout
+                  </p>
+                </div>
               </div>
-              <div>
-                <CardTitle>Bank Account & Payment Settings</CardTitle>
-                <p className="text-xs text-[#66736B]">
-                  Official shop account details displayed to customers on checkout for direct bank transfers
-                </p>
-              </div>
+
+              {currentUser?.role === 'OWNER' && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setNewBankName('OPAY');
+                    setNewAccNumber('');
+                    setNewAccName(shop?.name || 'Amarachi Jane Awa');
+                    setNewIsPrimary(bankAccounts.length === 0);
+                    setAddBankModal(true);
+                  }}
+                  className="gap-1.5 shrink-0 font-bold"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Bank Account</span>
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent className="p-5 space-y-4">
@@ -414,71 +478,83 @@ export default function SettingsPage() {
               </div>
             )}
 
-            <form onSubmit={handleSaveBank} className="space-y-4">
-              {/* Customer Checkout Preview Box */}
-              <div className="p-3.5 bg-[#FAFBFB] rounded-[12px] border border-[#E5EBE7] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-0.5">
-                  <span className="text-[10px] font-bold text-[#66736B] uppercase tracking-wider block">
-                    Live Checkout Customer View
-                  </span>
-                  <div className="text-xs text-[#17211B] flex flex-wrap items-center gap-1.5 pt-0.5">
-                    <span className="text-[#66736B]">Bank:</span>
-                    <strong className="font-bold text-[#17211B]">{bankName || 'OPAY'}</strong>
-                    <span className="text-gray-300">•</span>
-                    <span className="text-[#66736B]">Account Number:</span>
-                    <strong className="font-bold font-mono text-sm text-[#16803C] tracking-wide">{accountNumber || '6542969118'}</strong>
-                    <span className="text-gray-300">•</span>
-                    <span className="text-[#66736B]">Account Name:</span>
-                    <strong className="font-bold text-[#17211B]">{accountName || 'Amarachi Jane Awa'}</strong>
+            {/* List of Configured Accounts */}
+            {bankAccounts.length === 0 ? (
+              <div className="p-6 text-center bg-[#F8FAF9] rounded-[12px] border border-dashed border-[#DDE5DF]">
+                <CreditCard className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-xs font-semibold text-[#17211B]">No Bank Accounts Configured</p>
+                <p className="text-[11px] text-[#66736B] mt-0.5">
+                  Click &quot;Add Bank Account&quot; to configure accounts for customer payments.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {bankAccounts.map((acc) => (
+                  <div
+                    key={acc.id}
+                    className={`p-4 rounded-[12px] border transition-all ${
+                      acc.isPrimary
+                        ? 'bg-[#F4FAF6] border-[#16803C] shadow-xs'
+                        : 'bg-white border-[#DDE5DF] hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-sm text-[#17211B]">{acc.bankName}</span>
+                        {acc.isPrimary && (
+                          <span className="bg-[#16803C] text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider">
+                            Primary
+                          </span>
+                        )}
+                      </div>
+
+                      {currentUser?.role === 'OWNER' && (
+                        <div className="flex items-center gap-1">
+                          {!acc.isPrimary && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleSetPrimaryAccount(acc.id)}
+                              isLoading={settingPrimaryId === acc.id}
+                              className="text-[10px] h-6 px-2 text-[#16803C] hover:bg-[#EAF7EE]"
+                              title="Set this account as the primary transfer account"
+                            >
+                              Make Primary
+                            </Button>
+                          )}
+                          {bankAccounts.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteBankAccount(acc)}
+                              disabled={deletingBankId === acc.id}
+                              className="p-1 rounded text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors ml-1 cursor-pointer"
+                              title="Delete bank account"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-2.5 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-[#66736B]">Account Number:</span>
+                        <span className="font-mono font-bold text-sm text-[#16803C] tracking-wider">
+                          {acc.accountNumber}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-[#66736B]">Account Name:</span>
+                        <span className="font-semibold text-xs text-[#17211B] truncate max-w-[200px]">
+                          {acc.accountName}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <Input
-                    label="Bank Name"
-                    value={bankName}
-                    onChange={(e) => setBankName(e.target.value)}
-                    placeholder="e.g. OPAY, Moniepoint, GTBank"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Input
-                    label="Account Number"
-                    value={accountNumber}
-                    onChange={(e) => setAccountNumber(e.target.value)}
-                    placeholder="e.g. 6542969118"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Input
-                    label="Account Name"
-                    value={accountName}
-                    onChange={(e) => setAccountName(e.target.value)}
-                    placeholder="e.g. Amarachi Jane Awa"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2 flex justify-end">
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="md"
-                  isLoading={savingBank}
-                  className="font-bold"
-                >
-                  <Check className="w-4 h-4 mr-1" />
-                  <span>Save Bank Settings</span>
-                </Button>
-              </div>
-            </form>
+            )}
           </CardContent>
         </Card>
 
@@ -958,6 +1034,96 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Add Bank Account Modal */}
+      <Modal
+        isOpen={addBankModal}
+        onClose={() => setAddBankModal(false)}
+        title="Add Shop Bank Account"
+        description="Provide account details where customers will transfer order payments"
+        maxWidth="md"
+      >
+        <form onSubmit={handleAddBankAccount} className="space-y-4">
+          <div>
+            <label className="block text-xs sm:text-sm font-medium text-[#17211B] mb-1.5">
+              Select or Type Bank Name
+            </label>
+            <div className="space-y-2">
+              <Input
+                placeholder="e.g. OPAY, Moniepoint, PalmPay, GTBank"
+                value={newBankName}
+                onChange={(e) => setNewBankName(e.target.value)}
+                required
+              />
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {['OPAY', 'Moniepoint', 'PalmPay', 'Kuda', 'GTBank', 'Zenith Bank', 'Access Bank', 'UBA'].map(
+                  (b) => (
+                    <button
+                      key={b}
+                      type="button"
+                      onClick={() => setNewBankName(b)}
+                      className={`text-[11px] px-2.5 py-1 rounded-[6px] border font-medium transition-all ${
+                        newBankName === b
+                          ? 'bg-[#16803C] text-white border-[#16803C] shadow-xs'
+                          : 'bg-white border-[#DDE5DF] text-[#66736B] hover:border-gray-400'
+                      }`}
+                    >
+                      {b}
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <Input
+              label="Account Number (NUBAN)"
+              placeholder="e.g. 6542969118"
+              value={newAccNumber}
+              onChange={(e) => setNewAccNumber(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <Input
+              label="Account Name"
+              placeholder="e.g. Amarachi Jane Awa"
+              value={newAccName}
+              onChange={(e) => setNewAccName(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="p-3 bg-[#F8FAF9] rounded-[10px] border border-[#DDE5DF] flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold text-[#17211B] block">Set as Primary Account</span>
+              <span className="text-[11px] text-[#66736B] block">
+                Primary accounts are highlighted and shown first to customers at checkout.
+              </span>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer shrink-0">
+              <input
+                type="checkbox"
+                checked={newIsPrimary}
+                onChange={(e) => setNewIsPrimary(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#16803C]"></div>
+            </label>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#F0F4F1]">
+            <Button type="button" variant="outline" size="md" onClick={() => setAddBankModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" size="md" isLoading={submittingBank} className="font-bold">
+              Add Account
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </AppShell>
   );
 }

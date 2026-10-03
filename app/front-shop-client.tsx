@@ -245,7 +245,7 @@ export default function FrontShopClient() {
   const [submittingOrder, setSubmittingOrder] = React.useState(false);
   const [orderSuccess, setOrderSuccess] = React.useState<any | null>(null);
   const [orderError, setOrderError] = React.useState('');
-  const [copiedAccount, setCopiedAccount] = React.useState(false);
+  const [copiedAccount, setCopiedAccount] = React.useState<string | null>(null);
 
   // Contact Form
   const [contactName, setContactName] = React.useState('');
@@ -2043,7 +2043,7 @@ export default function FrontShopClient() {
                         >
                           🏦 Bank Transfer
                           <span className="block text-[10px] font-normal text-[#66736B]">
-                            Pay via GTBank
+                            {shop?.bankName ? `Pay via ${shop.bankName}` : 'Instant Transfer'}
                           </span>
                         </button>
 
@@ -2116,49 +2116,99 @@ export default function FrontShopClient() {
             </div>
 
             {/* Bank Transfer Box */}
-            <div className="p-4 bg-white border border-[#DDE5DF] rounded-[12px] space-y-2">
-              <h4 className="font-bold text-sm text-[#17211B]">
-                Shop Bank Transfer Information
-              </h4>
-              <div className="space-y-1 font-mono text-xs">
-                <p>
-                  <span className="text-[#66736B]">Bank:</span> {orderSuccess.bankDetails.bankName}
+            <div className="p-4 bg-white border border-[#DDE5DF] rounded-[14px] space-y-3 shadow-xs">
+              <div className="pb-2 border-b border-[#F0F4F1]">
+                <h4 className="font-bold text-sm text-[#17211B]">
+                  Shop Bank Transfer Information
+                </h4>
+                <p className="text-xs text-[#66736B] mt-0.5">
+                  Transfer to any of our official shop accounts below:
                 </p>
-                <p className="flex items-center flex-wrap gap-1.5">
-                  <span className="text-[#66736B]">Account Number:</span>{' '}
-                  <strong className="text-sm text-[#16803C] tracking-wide">
-                    {orderSuccess.bankDetails.accountNumber}
-                  </strong>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(orderSuccess.bankDetails.accountNumber);
-                      setCopiedAccount(true);
-                      setTimeout(() => setCopiedAccount(false), 2500);
-                    }}
-                    className="ml-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-[6px] bg-[#EAF7EE] text-[#16803C] hover:bg-[#16803C] hover:text-white transition-all text-[11px] font-sans font-bold cursor-pointer shadow-xs active:scale-95"
-                    title="Copy Account Number"
-                  >
-                    {copiedAccount ? (
-                      <>
-                        <Check className="w-3 h-3" />
-                        <span>Copied!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3 h-3" />
-                        <span>Copy</span>
-                      </>
-                    )}
-                  </button>
-                </p>
-                <p>
-                  <span className="text-[#66736B]">Account Name:</span> {orderSuccess.bankDetails.accountName}
-                </p>
-                <p>
-                  <span className="text-[#66736B]">Amount to Transfer:</span>{' '}
-                  <strong className="text-base text-[#16803C]">{formatNaira(orderSuccess.order.totalAmount)}</strong>
-                </p>
+              </div>
+
+              <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-0.5">
+                {((orderSuccess.bankAccounts && orderSuccess.bankAccounts.length > 0)
+                  ? orderSuccess.bankAccounts
+                  : (orderSuccess.bankDetails ? [orderSuccess.bankDetails] : [])
+                ).map((acc: any, index: number) => {
+                  const isCopied = copiedAccount === acc.accountNumber;
+                  return (
+                    <div
+                      key={acc.id || index}
+                      className={`p-3 rounded-[10px] border transition-all text-xs ${
+                        acc.isPrimary
+                          ? 'border-[#A4D4B4] bg-[#F2FAF5]/70'
+                          : 'border-[#E4EBE6] bg-[#F9FCFA]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-[#17211B]">{acc.bankName}</span>
+                          {acc.isPrimary && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#16803C] text-white tracking-wide uppercase">
+                              Primary
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (navigator.clipboard && navigator.clipboard.writeText) {
+                              navigator.clipboard.writeText(acc.accountNumber);
+                            } else {
+                              const textArea = document.createElement('textarea');
+                              textArea.value = acc.accountNumber;
+                              document.body.appendChild(textArea);
+                              textArea.select();
+                              document.execCommand('copy');
+                              document.body.removeChild(textArea);
+                            }
+                            setCopiedAccount(acc.accountNumber);
+                            setTimeout(() => setCopiedAccount(null), 2500);
+                          }}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] text-[11px] font-sans font-bold cursor-pointer transition-all shadow-xs active:scale-95 ${
+                            isCopied
+                              ? 'bg-[#16803C] text-white'
+                              : 'bg-[#EAF7EE] text-[#16803C] hover:bg-[#16803C] hover:text-white'
+                          }`}
+                          title="Copy Account Number"
+                        >
+                          {isCopied ? (
+                            <>
+                              <Check className="w-3 h-3" />
+                              <span>Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3" />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      <div className="space-y-0.5 font-mono text-[#3D4A41]">
+                        <p className="flex items-center gap-1.5 text-xs">
+                          <span className="text-[#66736B] font-sans text-[11px]">Account Number:</span>
+                          <strong className="text-sm font-mono tracking-wider text-[#16803C]">
+                            {acc.accountNumber}
+                          </strong>
+                        </p>
+                        <p className="flex items-center gap-1.5 text-[11px]">
+                          <span className="text-[#66736B] font-sans">Account Name:</span>
+                          <span className="font-medium text-[#17211B]">{acc.accountName}</span>
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="pt-2 border-t border-[#F0F4F1] flex items-center justify-between text-xs text-[#66736B]">
+                <span>Amount to Transfer:</span>
+                <strong className="text-base text-[#16803C] font-mono">
+                  {formatNaira(orderSuccess.order.totalAmount)}
+                </strong>
               </div>
             </div>
 
