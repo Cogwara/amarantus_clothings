@@ -507,7 +507,7 @@ export default function PurchasesPage() {
                   label="Unit Cost (₦)"
                   type="number"
                   min="0"
-                  step="100"
+                  step="any"
                   value={itemCost}
                   onChange={(e) => setItemCost(Number(e.target.value) || 0)}
                   className="h-8 py-1 text-xs"
@@ -519,7 +519,7 @@ export default function PurchasesPage() {
                   label="Selling Price (₦)"
                   type="number"
                   min="0"
-                  step="100"
+                  step="any"
                   value={itemSellingPrice}
                   onChange={(e) => setItemSellingPrice(Number(e.target.value) || 0)}
                   className="h-8 py-1 text-xs"

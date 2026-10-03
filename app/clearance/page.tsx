@@ -405,8 +405,8 @@ export default function ClearancePage() {
           <Input
             label="New Selling Price (₦)"
             type="number"
-            min="100"
-            step="100"
+            min="0"
+            step="any"
             value={customPrice || ''}
             onChange={(e) => setCustomPrice(Number(e.target.value) || 0)}
             helperText={`Profit remaining: ${formatNaira(

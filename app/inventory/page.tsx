@@ -1009,7 +1009,7 @@ export default function InventoryPage() {
                 label="Cost Price (₦)"
                 type="number"
                 min="0"
-                step="100"
+                step="any"
                 placeholder="e.g. 3500"
                 value={newProdCost}
                 onChange={(e) => setNewProdCost(Number(e.target.value))}
@@ -1022,7 +1022,7 @@ export default function InventoryPage() {
                 label="Selling Price (₦)"
                 type="number"
                 min="0"
-                step="100"
+                step="any"
                 placeholder="e.g. 8500"
                 value={newProdPrice}
                 onChange={(e) => setNewProdPrice(Number(e.target.value))}
@@ -1215,7 +1215,7 @@ export default function InventoryPage() {
                 label="Cost Price (₦)"
                 type="number"
                 min="0"
-                step="100"
+                step="any"
                 value={editProdCost}
                 onChange={(e) => setEditProdCost(Number(e.target.value))}
                 required
@@ -1227,7 +1227,7 @@ export default function InventoryPage() {
                 label="Selling Price (₦)"
                 type="number"
                 min="0"
-                step="100"
+                step="any"
                 value={editProdPrice}
                 onChange={(e) => setEditProdPrice(Number(e.target.value))}
                 required

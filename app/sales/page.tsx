@@ -700,7 +700,7 @@ export default function SalesPage() {
                       <input
                         type="number"
                         min="0"
-                        step="100"
+                        step="any"
                         placeholder="0"
                         value={overallDiscount || ''}
                         onChange={(e) => setOverallDiscount(Number(e.target.value) || 0)}

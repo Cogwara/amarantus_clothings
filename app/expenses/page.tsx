@@ -617,8 +617,8 @@ export default function ExpensesPage() {
             label="Expense Amount (₦)"
             type="number"
             min="1"
-            step="100"
-            placeholder="e.g. 8500"
+            step="any"
+            placeholder="e.g. 2500"
             value={amount || ''}
             onChange={(e) => setAmount(Number(e.target.value) || 0)}
             required
@@ -701,7 +701,7 @@ export default function ExpensesPage() {
             label="Expense Amount (₦)"
             type="number"
             min="1"
-            step="100"
+            step="any"
             value={editAmount || ''}
             onChange={(e) => setEditAmount(Number(e.target.value) || 0)}
             required
