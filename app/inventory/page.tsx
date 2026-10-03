@@ -266,6 +266,9 @@ export default function InventoryPage() {
   const resetAddForm = () => {
     setNewProdName('');
     setNewProdSku('');
+    setNewProdSize('M');
+    setNewProdGender('UNISEX');
+    setNewProdCondition('EXCELLENT');
     setNewProdBrand('');
     setNewProdColor('');
     setNewProdImages([]);
@@ -928,6 +931,22 @@ export default function InventoryPage() {
                 value={newProdSize}
                 onChange={(e) => setNewProdSize(e.target.value)}
               />
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-[#17211B] mb-1.5">
+                Gender / Department
+              </label>
+              <select
+                value={newProdGender}
+                onChange={(e) => setNewProdGender(e.target.value)}
+                className="w-full rounded-[10px] border border-[#DDE5DF] bg-white px-3.5 py-2.5 text-sm text-[#17211B] focus:border-[#16803C] focus:outline-none"
+              >
+                <option value="WOMEN">Women</option>
+                <option value="MEN">Men</option>
+                <option value="UNISEX">Unisex</option>
+                <option value="KIDS">Kids</option>
+              </select>
             </div>
 
             <div>
