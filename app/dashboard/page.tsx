@@ -20,6 +20,7 @@ import {
   Receipt,
   Truck,
   Sparkles,
+  Zap,
   ExternalLink,
 } from 'lucide-react';
 import { formatNaira, formatCompactNaira } from '@/lib/calculations';
@@ -105,6 +106,13 @@ export default function DashboardPage() {
               <Button variant="outline" size="md" className="gap-2 border-[#C5E9CE] text-[#16803C] hover:bg-[#EAF7EE] font-semibold">
                 <Sparkles className="w-4 h-4 text-[#F28C28]" />
                 <span>Hero Slides</span>
+              </Button>
+            </Link>
+
+            <Link href="/flash-sales">
+              <Button variant="outline" size="md" className="gap-2 border-[#FCD9B8] text-[#D96F0B] hover:bg-[#FFF4EE] font-semibold">
+                <Zap className="w-4 h-4 text-[#E52E04]" />
+                <span>Flash Sales</span>
               </Button>
             </Link>
           </div>

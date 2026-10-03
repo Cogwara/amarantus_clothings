@@ -17,6 +17,7 @@ import {
   UserCog,
   Settings,
   Sparkles,
+  Zap,
   ShoppingBag,
   ExternalLink,
 } from 'lucide-react';
@@ -99,6 +100,12 @@ export const NAV_ITEMS = [
     name: 'Hero Slides',
     icon: Sparkles,
     route: '/hero-slides',
+    roles: ['OWNER', 'MANAGER'],
+  },
+  {
+    name: 'Flash Sales',
+    icon: Zap,
+    route: '/flash-sales',
     roles: ['OWNER', 'MANAGER'],
   },
   {

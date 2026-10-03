@@ -127,6 +127,12 @@ export default function FrontShopClient() {
   const [helpDropdownOpen, setHelpDropdownOpen] = React.useState(false);
   const [heroSlide, setHeroSlide] = React.useState(0);
   const [heroSlides, setHeroSlides] = React.useState<any[]>([]);
+  const [flashSaleItems, setFlashSaleItems] = React.useState<any[]>([]);
+  const [flashSaleSettings, setFlashSaleSettings] = React.useState<any>({
+    title: 'Flash Sales',
+    isEnabled: true,
+    countdownHours: 24,
+  });
 
   // Hero carousel auto-advance timer
   React.useEffect(() => {
@@ -258,9 +264,10 @@ export default function FrontShopClient() {
       if (clearanceOnly) params.append('clearance', 'true');
       if (sortBy) params.append('sort', sortBy);
 
-      const [res, slidesRes] = await Promise.all([
+      const [res, slidesRes, flashRes] = await Promise.all([
         fetch(`/api/public/products?${params.toString()}`),
         fetch('/api/public/hero-slides').catch(() => null),
+        fetch('/api/public/flash-sales').catch(() => null),
       ]);
       const data = await res.json();
       if (data.products) setProducts(data.products);
@@ -272,6 +279,12 @@ export default function FrontShopClient() {
         if (slidesData?.slides && slidesData.slides.length > 0) {
           setHeroSlides(slidesData.slides);
         }
+      }
+
+      if (flashRes && flashRes.ok) {
+        const flashData = await flashRes.json();
+        if (flashData?.settings) setFlashSaleSettings(flashData.settings);
+        if (flashData?.items) setFlashSaleItems(flashData.items);
       }
     } finally {
       setLoading(false);
@@ -1219,108 +1232,115 @@ export default function FrontShopClient() {
       </section>
 
       {/* Flash Sales Banner with Live Ticking Countdown */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 w-full">
-        <div className="bg-white rounded-[16px] border border-[#DDE5DF] overflow-hidden shadow-sm">
-          {/* Header Bar (Red Jumia Flash Sales Style) */}
-          <div className="bg-[#E52E04] text-white px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Zap className="w-5 h-5 fill-white text-white" />
-              <h2 className="text-base sm:text-lg font-black tracking-wide uppercase">
-                Flash Sales
-              </h2>
-            </div>
-
-            {/* Countdown Clock */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-white/90 hidden sm:inline">
-                Time Left:
-              </span>
-              <div className="flex items-center gap-1 font-mono text-xs sm:text-sm font-bold">
-                <span className="bg-black/30 px-2 py-0.5 rounded">
-                  {String(timeLeft.hours).padStart(2, '0')}h
-                </span>
-                <span>:</span>
-                <span className="bg-black/30 px-2 py-0.5 rounded">
-                  {String(timeLeft.minutes).padStart(2, '0')}m
-                </span>
-                <span>:</span>
-                <span className="bg-black/30 px-2 py-0.5 rounded">
-                  {String(timeLeft.seconds).padStart(2, '0')}s
-                </span>
+      {flashSaleSettings?.isEnabled !== false && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 w-full">
+          <div className="bg-white rounded-[16px] border border-[#DDE5DF] overflow-hidden shadow-sm">
+            {/* Header Bar (Red Jumia Flash Sales Style) */}
+            <div className="bg-[#E52E04] text-white px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Zap className="w-5 h-5 fill-white text-white" />
+                <h2 className="text-base sm:text-lg font-black tracking-wide uppercase">
+                  {flashSaleSettings?.title || 'Flash Sales'}
+                </h2>
               </div>
+
+              {/* Countdown Clock */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-white/90 hidden sm:inline">
+                  Time Left:
+                </span>
+                <div className="flex items-center gap-1 font-mono text-xs sm:text-sm font-bold">
+                  <span className="bg-black/30 px-2 py-0.5 rounded">
+                    {String(timeLeft.hours).padStart(2, '0')}h
+                  </span>
+                  <span>:</span>
+                  <span className="bg-black/30 px-2 py-0.5 rounded">
+                    {String(timeLeft.minutes).padStart(2, '0')}m
+                  </span>
+                  <span>:</span>
+                  <span className="bg-black/30 px-2 py-0.5 rounded">
+                    {String(timeLeft.seconds).padStart(2, '0')}s
+                  </span>
+                </div>
+              </div>
+
+              <a
+                href="#catalog"
+                onClick={() => setClearanceOnly(true)}
+                className="text-xs font-bold uppercase tracking-wider text-white hover:underline flex items-center gap-1"
+              >
+                <span>See All Deals</span>
+                <span>→</span>
+              </a>
             </div>
 
-            <a
-              href="#catalog"
-              onClick={() => setClearanceOnly(true)}
-              className="text-xs font-bold uppercase tracking-wider text-white hover:underline flex items-center gap-1"
-            >
-              <span>See All Deals</span>
-              <span>→</span>
-            </a>
-          </div>
+            {/* Horizontal Deals Carousel */}
+            <div className="p-4 overflow-x-auto flex gap-4 no-scrollbar">
+              {((flashSaleItems && flashSaleItems.length > 0)
+                ? flashSaleItems
+                : products.slice(0, 6)
+              ).map((item: any) => {
+                const p = item.product || item;
+                const discountPercent = item.discountPercent || (p.status === 'CLEARANCE' ? 50 : 35);
+                const originalPrice = item.originalPrice || Math.round(p.sellingPrice / (1 - discountPercent / 100));
+                const flashPrice = item.flashPrice || p.sellingPrice;
 
-          {/* Horizontal Deals Carousel */}
-          <div className="p-4 overflow-x-auto flex gap-4 no-scrollbar">
-            {products.slice(0, 6).map((p) => {
-              const discountPercent = p.status === 'CLEARANCE' ? 50 : 35;
-              const originalPrice = Math.round(p.sellingPrice / (1 - discountPercent / 100));
-
-              return (
-                <div
-                  key={p.id}
-                  onClick={() => setDetailProduct(p)}
-                  className="w-44 sm:w-48 shrink-0 bg-white rounded-[12px] border border-[#F0F4F1] hover:border-[#16803C] hover:shadow-cardHover transition-all p-2.5 cursor-pointer flex flex-col justify-between"
-                >
-                  <div className="relative aspect-square w-full rounded-[10px] overflow-hidden bg-gray-100 mb-2">
-                    <img
-                      src={p.primaryImageUrl || 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=500&q=80'}
-                      alt={p.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-1.5 right-1.5 bg-[#DC2626] text-white text-[10px] font-black px-1.5 py-0.5 rounded">
-                      -{discountPercent}%
-                    </div>
-                    {p.images && p.images.length > 1 && (
-                      <div className="absolute bottom-1.5 right-1.5 bg-black/65 backdrop-blur-sm text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-1 shadow-sm pointer-events-none">
-                        <Camera className="w-3 h-3 text-[#F28C28]" />
-                        <span>{p.images.length}</span>
+                return (
+                  <div
+                    key={item.id || p.id}
+                    onClick={() => setDetailProduct(p)}
+                    className="w-44 sm:w-48 shrink-0 bg-white rounded-[12px] border border-[#F0F4F1] hover:border-[#16803C] hover:shadow-cardHover transition-all p-2.5 cursor-pointer flex flex-col justify-between"
+                  >
+                    <div className="relative aspect-square w-full rounded-[10px] overflow-hidden bg-gray-100 mb-2">
+                      <img
+                        src={p.primaryImageUrl || 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=500&q=80'}
+                        alt={p.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-1.5 right-1.5 bg-[#DC2626] text-white text-[10px] font-black px-1.5 py-0.5 rounded">
+                        -{discountPercent}%
                       </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <h4 className="text-xs font-semibold text-[#17211B] line-clamp-1">
-                      {p.name}
-                    </h4>
-                    <div className="mt-1 flex items-baseline gap-1.5">
-                      <span className="text-sm font-black text-[#17211B]">
-                        {formatNaira(p.sellingPrice)}
-                      </span>
-                      <span className="text-[10px] text-[#8A968F] line-through">
-                        {formatNaira(originalPrice)}
-                      </span>
+                      {p.images && p.images.length > 1 && (
+                        <div className="absolute bottom-1.5 right-1.5 bg-black/65 backdrop-blur-sm text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-1 shadow-sm pointer-events-none">
+                          <Camera className="w-3 h-3 text-[#F28C28]" />
+                          <span>{p.images.length}</span>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Stock Progress Bar */}
-                    <div className="mt-2 space-y-1">
-                      <div className="w-full bg-[#EAEFEA] h-1.5 rounded-full overflow-hidden">
-                        <div
-                          className="bg-[#DC2626] h-full rounded-full"
-                          style={{ width: `${Math.min(100, Math.max(25, p.quantity * 15))}%` }}
-                        />
+                    <div>
+                      <h4 className="text-xs font-semibold text-[#17211B] line-clamp-1">
+                        {p.name}
+                      </h4>
+                      <div className="mt-1 flex items-baseline gap-1.5">
+                        <span className="text-sm font-black text-[#17211B]">
+                          {formatNaira(flashPrice)}
+                        </span>
+                        <span className="text-[10px] text-[#8A968F] line-through">
+                          {formatNaira(originalPrice)}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-[#66736B] block">
-                        {p.quantity} items left
-                      </span>
+
+                      {/* Stock Progress Bar */}
+                      <div className="mt-2 space-y-1">
+                        <div className="w-full bg-[#EAEFEA] h-1.5 rounded-full overflow-hidden">
+                          <div
+                            className="bg-[#DC2626] h-full rounded-full"
+                            style={{ width: `${Math.min(100, Math.max(25, p.quantity * 15))}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] text-[#66736B] block">
+                          {p.quantity} items left
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Catalog & Filter Navigation Bar */}
       <section id="catalog" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full flex-1 space-y-6">

@@ -287,3 +287,35 @@ export interface HeroSlide {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface FlashSaleSettings {
+  id: string;
+  title: string;
+  subtitle?: string | null;
+  isEnabled: boolean;
+  countdownHours: number;
+  endTime?: string | null;
+  updatedAt?: string;
+}
+
+export interface FlashSaleItem {
+  id: string;
+  productId: string;
+  productName: string;
+  productSku: string;
+  productPrice: number;
+  productSize: string;
+  productCondition: string;
+  productQuantity: number;
+  productStatus: string;
+  categoryName?: string;
+  primaryImageUrl?: string | null;
+  images?: any[];
+  discountPercent: number;
+  flashPrice?: number | null;
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+

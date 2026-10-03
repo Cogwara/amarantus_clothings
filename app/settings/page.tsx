@@ -17,6 +17,7 @@ import {
   Building,
   ShieldAlert,
   Sparkles,
+  Zap,
   ExternalLink,
   Plus,
   Trash2,
@@ -332,6 +333,47 @@ export default function SettingsPage() {
             <Link href="/hero-slides" className="shrink-0">
               <Button variant="outline" size="sm" className="font-semibold">
                 Open Carousel Editor
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Storefront Flash Sales Customizer Card */}
+        <Card className="border-[#FCD9B8] overflow-hidden">
+          <CardHeader className="bg-[#FFF4EE] p-5 border-b border-[#FCD9B8]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-full bg-[#E52E04] text-white flex items-center justify-center shrink-0 shadow-sm">
+                  <Zap className="w-5 h-5 fill-white" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-base text-[#9A2105]">Flash Sales Manager</CardTitle>
+                    <Badge variant="orange" className="text-[10px] uppercase font-bold">
+                      Storefront Deals
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-[#C2410C] mt-0.5">
+                    Choose handpicked clothes for the home page Flash Sales banner, customize discount markdowns, and control countdown timers
+                  </p>
+                </div>
+              </div>
+
+              <Link href="/flash-sales">
+                <Button variant="secondary" size="sm" className="font-bold shadow-sm bg-[#E52E04] hover:bg-[#C22703]">
+                  <span>Manage Flash Sales</span>
+                  <ExternalLink className="w-3.5 h-3.5 ml-1" />
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <p className="text-xs text-[#17211B] leading-relaxed max-w-xl">
+              Curate exactly which items appear in the Red Flash Sales banner with live ticking countdown clock. Set individual discount rates (-20% to -70%), reorder slots, or pause items anytime.
+            </p>
+            <Link href="/flash-sales" className="shrink-0">
+              <Button variant="outline" size="sm" className="font-semibold border-[#FCD9B8] text-[#D96F0B] hover:bg-[#FFF4EE]">
+                Open Deals Editor
               </Button>
             </Link>
           </CardContent>

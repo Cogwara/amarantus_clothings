@@ -27,6 +27,7 @@ import {
   ZoomIn,
   Trash2,
   CheckCircle2,
+  Zap,
 } from 'lucide-react';
 import { ImageLightbox } from '@/components/ui/image-lightbox';
 import { formatNaira, calculateMarginPercentage } from '@/lib/calculations';
@@ -174,6 +175,25 @@ export default function InventoryPage() {
       setDeleteError(err.message || 'Error deleting product');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleQuickAddToFlashSale = async (prod: Product) => {
+    try {
+      const res = await fetch('/api/flash-sales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: prod.id, discountPercent: 40 }),
+      });
+      if (res.ok) {
+        setDeleteSuccess(`⚡ "${prod.name}" successfully added to Flash Sales!`);
+        setTimeout(() => setDeleteSuccess(''), 4000);
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to add to Flash Sales');
+      }
+    } catch (e: any) {
+      alert(e?.message || 'Error adding to Flash Sales');
     }
   };
 
@@ -665,6 +685,16 @@ export default function InventoryPage() {
                           <ArrowUpDown className="w-3.5 h-3.5 mr-1" />
                           <span>Adjust</span>
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleQuickAddToFlashSale(p)}
+                          className="text-xs h-7 px-2 border-[#FCD9B8] text-[#D96F0B] hover:bg-[#FFF4EE]"
+                          title="Add to Flash Sales"
+                        >
+                          <Zap className="w-3.5 h-3.5 mr-1 text-[#E52E04]" />
+                          <span>Flash Sale</span>
+                        </Button>
                         {isOwner && (
                           <Button
                             variant="danger"
@@ -780,6 +810,14 @@ export default function InventoryPage() {
                                   title="Adjust Stock"
                                 >
                                   <ArrowUpDown className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleQuickAddToFlashSale(p)}
+                                  className="p-1 rounded text-[#E52E04] hover:bg-[#FFF4EE] transition-colors"
+                                  title="Add to Flash Sales"
+                                  aria-label="Add to Flash Sales"
+                                >
+                                  <Zap className="w-4 h-4 fill-[#E52E04]" />
                                 </button>
                                 {isOwner && (
                                   <button
