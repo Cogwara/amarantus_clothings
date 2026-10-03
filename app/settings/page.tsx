@@ -27,6 +27,7 @@ import {
   TrendingDown,
   Eye,
   Check,
+  CreditCard,
 } from 'lucide-react';
 import { Shop } from '@/lib/types';
 
@@ -43,6 +44,13 @@ export default function SettingsPage() {
   const [currency, setCurrency] = React.useState('NGN');
   const [savingShop, setSavingShop] = React.useState(false);
   const [shopMessage, setShopMessage] = React.useState('');
+
+  // Shop Bank Account Settings
+  const [bankName, setBankName] = React.useState('OPAY');
+  const [accountNumber, setAccountNumber] = React.useState('6542969118');
+  const [accountName, setAccountName] = React.useState('Amarachi Jane Awa');
+  const [savingBank, setSavingBank] = React.useState(false);
+  const [bankMessage, setBankMessage] = React.useState('');
 
   // Storefront Discount Badges Settings
   const [defaultDiscount, setDefaultDiscount] = React.useState(30);
@@ -88,6 +96,9 @@ export default function SettingsPage() {
         setDefaultDiscount(typeof sRes.shop.defaultDiscountPercent === 'number' ? sRes.shop.defaultDiscountPercent : 30);
         setClearanceDiscount(typeof sRes.shop.clearanceDiscountPercent === 'number' ? sRes.shop.clearanceDiscountPercent : 50);
         setShowDiscountBadges(sRes.shop.showDiscountBadges !== false);
+        setBankName(sRes.shop.bankName || 'OPAY');
+        setAccountNumber(sRes.shop.accountNumber || '6542969118');
+        setAccountName(sRes.shop.accountName || 'Amarachi Jane Awa');
       }
       if (sRes?.stats) setStats(sRes.stats);
       if (catRes?.categories) setCategories(catRes.categories);
@@ -232,6 +243,39 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveBank = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accountNumber.trim() || !accountName.trim()) {
+      alert('Please provide an account number and account name.');
+      return;
+    }
+    setSavingBank(true);
+    setBankMessage('');
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bankName: bankName.trim(),
+          accountNumber: accountNumber.trim(),
+          accountName: accountName.trim(),
+        }),
+      });
+      if (res.ok) {
+        setBankMessage('Bank transfer settings saved! Customers will now see this account on checkout.');
+        setTimeout(() => setBankMessage(''), 5000);
+        loadData();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to update bank details');
+      }
+    } catch {
+      alert('Error updating bank details');
+    } finally {
+      setSavingBank(false);
+    }
+  };
+
   const handleResetDemoData = async () => {
     if (
       !confirm(
@@ -341,6 +385,97 @@ export default function SettingsPage() {
                   className="font-bold"
                 >
                   Save Business Profile
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Payment & Bank Transfer Settings */}
+        <Card className="border-[#DDE5DF] overflow-hidden shadow-xs">
+          <CardHeader className="pb-3 border-b border-[#F0F4F1] bg-[#F8FAF9]">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-[8px] bg-[#16803C] text-white">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <div>
+                <CardTitle>Bank Account & Payment Settings</CardTitle>
+                <p className="text-xs text-[#66736B]">
+                  Official shop account details displayed to customers on checkout for direct bank transfers
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-5 space-y-4">
+            {bankMessage && (
+              <div className="p-3.5 bg-[#EAF7EE] border border-[#C5E9CE] rounded-[10px] flex items-center gap-2 text-xs font-bold text-[#16803C] shadow-xs">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{bankMessage}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveBank} className="space-y-4">
+              {/* Customer Checkout Preview Box */}
+              <div className="p-3.5 bg-[#FAFBFB] rounded-[12px] border border-[#E5EBE7] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold text-[#66736B] uppercase tracking-wider block">
+                    Live Checkout Customer View
+                  </span>
+                  <div className="text-xs text-[#17211B] flex flex-wrap items-center gap-1.5 pt-0.5">
+                    <span className="text-[#66736B]">Bank:</span>
+                    <strong className="font-bold text-[#17211B]">{bankName || 'OPAY'}</strong>
+                    <span className="text-gray-300">•</span>
+                    <span className="text-[#66736B]">Account Number:</span>
+                    <strong className="font-bold font-mono text-sm text-[#16803C] tracking-wide">{accountNumber || '6542969118'}</strong>
+                    <span className="text-gray-300">•</span>
+                    <span className="text-[#66736B]">Account Name:</span>
+                    <strong className="font-bold text-[#17211B]">{accountName || 'Amarachi Jane Awa'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <Input
+                    label="Bank Name"
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    placeholder="e.g. OPAY, Moniepoint, GTBank"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Input
+                    label="Account Number"
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(e.target.value)}
+                    placeholder="e.g. 6542969118"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Input
+                    label="Account Name"
+                    value={accountName}
+                    onChange={(e) => setAccountName(e.target.value)}
+                    placeholder="e.g. Amarachi Jane Awa"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="md"
+                  isLoading={savingBank}
+                  className="font-bold"
+                >
+                  <Check className="w-4 h-4 mr-1" />
+                  <span>Save Bank Settings</span>
                 </Button>
               </div>
             </form>

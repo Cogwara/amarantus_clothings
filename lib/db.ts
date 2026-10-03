@@ -73,7 +73,17 @@ export async function ensureDiscountColumns() {
       ALTER TABLE shops ADD COLUMN IF NOT EXISTS "defaultDiscountPercent" INT DEFAULT 30;
       ALTER TABLE shops ADD COLUMN IF NOT EXISTS "clearanceDiscountPercent" INT DEFAULT 50;
       ALTER TABLE shops ADD COLUMN IF NOT EXISTS "showDiscountBadges" BOOLEAN DEFAULT true;
+      ALTER TABLE shops ADD COLUMN IF NOT EXISTS "bankName" VARCHAR(255) DEFAULT 'OPAY';
+      ALTER TABLE shops ADD COLUMN IF NOT EXISTS "accountNumber" VARCHAR(50) DEFAULT '6542969118';
+      ALTER TABLE shops ADD COLUMN IF NOT EXISTS "accountName" VARCHAR(255) DEFAULT 'Amarachi Jane Awa';
       ALTER TABLE products ADD COLUMN IF NOT EXISTS "discountPercent" INT;
+
+      UPDATE shops
+      SET 
+        "bankName" = COALESCE("bankName", 'OPAY'),
+        "accountNumber" = COALESCE("accountNumber", '6542969118'),
+        "accountName" = COALESCE("accountName", 'Amarachi Jane Awa')
+      WHERE "bankName" IS NULL OR "accountNumber" IS NULL OR "accountName" IS NULL;
     `);
     discountColumnsEnsured = true;
   } catch (err) {

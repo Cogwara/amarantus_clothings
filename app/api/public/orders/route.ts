@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query, withTransaction } from '@/lib/db';
+import { query, withTransaction, ensureDiscountColumns } from '@/lib/db';
 import { logAudit } from '@/lib/auth';
 import { z } from 'zod';
 
@@ -28,6 +28,7 @@ const publicOrderSchema = z
 
 export async function POST(request: Request) {
   try {
+    await ensureDiscountColumns();
     const body = await request.json();
     const parsed = publicOrderSchema.safeParse(body);
     if (!parsed.success) {
@@ -226,11 +227,27 @@ export async function POST(request: Request) {
     });
 
     // Fetch shop details for bank transfer info
-    const shopRes = await query(`SELECT name, phone, address FROM shops LIMIT 1`);
-    const shop = shopRes.rows[0] || {
+    let shop;
+    try {
+      const shopRes = await query(
+        `SELECT name, phone, address, "bankName", "accountNumber", "accountName" FROM shops LIMIT 1`
+      );
+      shop = shopRes.rows[0];
+    } catch {
+      const fallbackRes = await query(`SELECT name, phone, address FROM shops LIMIT 1`);
+      shop = fallbackRes.rows[0];
+    }
+
+    const shopProfile = shop || {
       name: 'Amarantus Clothings',
       phone: '+234 9065043549',
       address: 'Plot 78 Gbazango Kubwa FCT',
+    };
+
+    const bankDetails = {
+      bankName: shop?.bankName || 'OPAY',
+      accountNumber: shop?.accountNumber || '6542969118',
+      accountName: shop?.accountName || 'Amarachi Jane Awa',
     };
 
     return NextResponse.json({
@@ -238,12 +255,8 @@ export async function POST(request: Request) {
       saleNumber: result.saleNumber,
       totalAmount: result.totalAmount,
       order: result,
-      shop,
-      bankDetails: {
-        bankName: 'GTBank (Guaranty Trust Bank)',
-        accountNumber: '0123456789',
-        accountName: 'Amarantus Clothings',
-      },
+      shop: shopProfile,
+      bankDetails,
     });
   } catch (error: any) {
     console.error('Front shop order error:', error);

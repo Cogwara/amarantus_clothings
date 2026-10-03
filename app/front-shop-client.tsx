@@ -245,6 +245,7 @@ export default function FrontShopClient() {
   const [submittingOrder, setSubmittingOrder] = React.useState(false);
   const [orderSuccess, setOrderSuccess] = React.useState<any | null>(null);
   const [orderError, setOrderError] = React.useState('');
+  const [copiedAccount, setCopiedAccount] = React.useState(false);
 
   // Contact Form
   const [contactName, setContactName] = React.useState('');
@@ -2123,9 +2124,33 @@ export default function FrontShopClient() {
                 <p>
                   <span className="text-[#66736B]">Bank:</span> {orderSuccess.bankDetails.bankName}
                 </p>
-                <p>
+                <p className="flex items-center flex-wrap gap-1.5">
                   <span className="text-[#66736B]">Account Number:</span>{' '}
-                  <strong className="text-sm text-[#16803C]">{orderSuccess.bankDetails.accountNumber}</strong>
+                  <strong className="text-sm text-[#16803C] tracking-wide">
+                    {orderSuccess.bankDetails.accountNumber}
+                  </strong>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(orderSuccess.bankDetails.accountNumber);
+                      setCopiedAccount(true);
+                      setTimeout(() => setCopiedAccount(false), 2500);
+                    }}
+                    className="ml-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-[6px] bg-[#EAF7EE] text-[#16803C] hover:bg-[#16803C] hover:text-white transition-all text-[11px] font-sans font-bold cursor-pointer shadow-xs active:scale-95"
+                    title="Copy Account Number"
+                  >
+                    {copiedAccount ? (
+                      <>
+                        <Check className="w-3 h-3" />
+                        <span>Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
                 </p>
                 <p>
                   <span className="text-[#66736B]">Account Name:</span> {orderSuccess.bankDetails.accountName}

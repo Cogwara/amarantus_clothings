@@ -1,26 +1,20 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { query, ensureDiscountColumns } from '@/lib/db';
 import { getCurrentUser, logAudit } from '@/lib/auth';
 import { z } from 'zod';
 
 const updateShopSchema = z.object({
-  name: z.string().min(2),
-  phone: z.string().min(5),
-  address: z.string().min(5),
+  name: z.string().min(2).optional(),
+  phone: z.string().min(5).optional(),
+  address: z.string().min(5).optional(),
   currency: z.string().default('NGN'),
   defaultDiscountPercent: z.number().int().min(0).max(95).optional(),
   clearanceDiscountPercent: z.number().int().min(0).max(95).optional(),
   showDiscountBadges: z.boolean().optional(),
+  bankName: z.string().optional().nullable(),
+  accountNumber: z.string().optional().nullable(),
+  accountName: z.string().optional().nullable(),
 });
-
-async function ensureDiscountColumns() {
-  await query(`
-    ALTER TABLE shops ADD COLUMN IF NOT EXISTS "defaultDiscountPercent" INT DEFAULT 30;
-    ALTER TABLE shops ADD COLUMN IF NOT EXISTS "clearanceDiscountPercent" INT DEFAULT 50;
-    ALTER TABLE shops ADD COLUMN IF NOT EXISTS "showDiscountBadges" BOOLEAN DEFAULT true;
-    ALTER TABLE products ADD COLUMN IF NOT EXISTS "discountPercent" INT;
-  `);
-}
 
 export async function GET() {
   try {
@@ -37,6 +31,9 @@ export async function GET() {
         COALESCE("defaultDiscountPercent", 30) as "defaultDiscountPercent",
         COALESCE("clearanceDiscountPercent", 50) as "clearanceDiscountPercent",
         COALESCE("showDiscountBadges", true) as "showDiscountBadges",
+        COALESCE("bankName", 'OPAY') as "bankName",
+        COALESCE("accountNumber", '6542969118') as "accountNumber",
+        COALESCE("accountName", 'Amarachi Jane Awa') as "accountName",
         "createdAt",
         "updatedAt"
       FROM shops 
@@ -50,6 +47,9 @@ export async function GET() {
       defaultDiscountPercent: 30,
       clearanceDiscountPercent: 50,
       showDiscountBadges: true,
+      bankName: 'OPAY',
+      accountNumber: '6542969118',
+      accountName: 'Amarachi Jane Awa',
     };
 
     // System stats
@@ -94,25 +94,31 @@ export async function PUT(request: Request) {
       `
       UPDATE shops
       SET 
-        name = $1, 
-        phone = $2, 
-        address = $3, 
-        currency = $4,
+        name = COALESCE($1, name), 
+        phone = COALESCE($2, phone), 
+        address = COALESCE($3, address), 
+        currency = COALESCE($4, currency),
         "defaultDiscountPercent" = COALESCE($5, "defaultDiscountPercent"),
         "clearanceDiscountPercent" = COALESCE($6, "clearanceDiscountPercent"),
         "showDiscountBadges" = COALESCE($7, "showDiscountBadges"),
+        "bankName" = COALESCE($8, "bankName"),
+        "accountNumber" = COALESCE($9, "accountNumber"),
+        "accountName" = COALESCE($10, "accountName"),
         "updatedAt" = NOW()
       WHERE id = (SELECT id FROM shops LIMIT 1)
       RETURNING *
     `,
       [
-        data.name,
-        data.phone,
-        data.address,
-        data.currency,
+        data.name ?? null,
+        data.phone ?? null,
+        data.address ?? null,
+        data.currency ?? null,
         data.defaultDiscountPercent !== undefined ? data.defaultDiscountPercent : null,
         data.clearanceDiscountPercent !== undefined ? data.clearanceDiscountPercent : null,
         data.showDiscountBadges !== undefined ? data.showDiscountBadges : null,
+        data.bankName !== undefined ? data.bankName : null,
+        data.accountNumber !== undefined ? data.accountNumber : null,
+        data.accountName !== undefined ? data.accountName : null,
       ]
     );
 

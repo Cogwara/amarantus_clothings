@@ -57,6 +57,9 @@ export interface Shop {
   defaultDiscountPercent?: number;
   clearanceDiscountPercent?: number;
   showDiscountBadges?: boolean;
+  bankName?: string;
+  accountNumber?: string;
+  accountName?: string;
   createdAt: string;
   updatedAt: string;
 }

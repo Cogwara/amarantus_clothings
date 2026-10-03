@@ -117,7 +117,10 @@ export async function GET(request: Request) {
           currency,
           COALESCE("defaultDiscountPercent", 30) as "defaultDiscountPercent",
           COALESCE("clearanceDiscountPercent", 50) as "clearanceDiscountPercent",
-          COALESCE("showDiscountBadges", true) as "showDiscountBadges"
+          COALESCE("showDiscountBadges", true) as "showDiscountBadges",
+          COALESCE("bankName", 'OPAY') as "bankName",
+          COALESCE("accountNumber", '6542969118') as "accountNumber",
+          COALESCE("accountName", 'Amarachi Jane Awa') as "accountName"
         FROM shops 
         LIMIT 1
       `);
@@ -138,11 +141,17 @@ export async function GET(request: Request) {
         defaultDiscountPercent: 30,
         clearanceDiscountPercent: 50,
         showDiscountBadges: true,
+        bankName: 'OPAY',
+        accountNumber: '6542969118',
+        accountName: 'Amarachi Jane Awa',
       };
     } else {
       shop.defaultDiscountPercent = shop.defaultDiscountPercent ?? 30;
       shop.clearanceDiscountPercent = shop.clearanceDiscountPercent ?? 50;
       shop.showDiscountBadges = shop.showDiscountBadges ?? true;
+      shop.bankName = shop.bankName || 'OPAY';
+      shop.accountNumber = shop.accountNumber || '6542969118';
+      shop.accountName = shop.accountName || 'Amarachi Jane Awa';
     }
 
     return NextResponse.json({
