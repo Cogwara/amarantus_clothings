@@ -101,6 +101,51 @@ export async function ensureDiscountColumns() {
       INSERT INTO shop_bank_accounts (bank_name, account_number, account_name, is_primary, is_active, display_order)
       SELECT 'OPAY', '6542969118', 'Amarachi Jane Awa', true, true, 0
       WHERE NOT EXISTS (SELECT 1 FROM shop_bank_accounts);
+
+      CREATE TABLE IF NOT EXISTS site_visitors (
+        id VARCHAR(100) PRIMARY KEY,
+        visitor_id VARCHAR(100) NOT NULL,
+        ip_address VARCHAR(100),
+        user_agent TEXT,
+        device_type VARCHAR(50) DEFAULT 'Desktop',
+        browser VARCHAR(50),
+        os VARCHAR(50),
+        current_page TEXT DEFAULT '/',
+        page_title TEXT,
+        referrer TEXT,
+        first_seen_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        last_active_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        total_pageviews INT DEFAULT 1
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_site_visitors_visitor ON site_visitors (visitor_id);
+      CREATE INDEX IF NOT EXISTS idx_site_visitors_active ON site_visitors (last_active_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_site_visitors_ip ON site_visitors (ip_address);
+
+      CREATE TABLE IF NOT EXISTS storefront_events (
+        id VARCHAR(100) PRIMARY KEY,
+        event_type VARCHAR(50) NOT NULL,
+        product_id VARCHAR(100),
+        product_name TEXT,
+        product_sku VARCHAR(100),
+        search_query TEXT,
+        search_results_count INT,
+        visitor_id VARCHAR(100),
+        session_id VARCHAR(100),
+        ip_address VARCHAR(100),
+        user_agent TEXT,
+        page_url TEXT,
+        page_title TEXT,
+        referrer TEXT,
+        metadata JSONB,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_events_type_created ON storefront_events (event_type, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_events_product ON storefront_events (product_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_events_search ON storefront_events (search_query, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_events_created ON storefront_events (created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_events_ip ON storefront_events (ip_address);
     `);
     discountColumnsEnsured = true;
   } catch (err) {

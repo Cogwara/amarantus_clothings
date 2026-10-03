@@ -20,6 +20,7 @@ import {
   Zap,
   ShoppingBag,
   ExternalLink,
+  Activity,
 } from 'lucide-react';
 import { Role } from '@/lib/types';
 import { Logo } from '@/components/ui/logo';
@@ -69,6 +70,13 @@ export const NAV_ITEMS = [
     name: 'Reports & P&L',
     icon: BarChart3,
     route: '/reports',
+    roles: ['OWNER', 'MANAGER'],
+  },
+  {
+    name: 'Live Traffic & Clicks',
+    icon: Activity,
+    route: '/analytics',
+    badge: 'Live',
     roles: ['OWNER', 'MANAGER'],
   },
   {
@@ -179,12 +187,17 @@ export function Sidebar({ userRole = 'OWNER' }: SidebarProps) {
               </div>
               {item.badge && (
                 <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1.5 ${
                     isActive
                       ? 'bg-white/20 text-white'
+                      : item.badge === 'Live'
+                      ? 'bg-[#EAF7EE] text-[#16803C]'
                       : 'bg-[#FFF1E2] text-[#D96F0B]'
                   }`}
                 >
+                  {item.badge === 'Live' && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#16803C] animate-pulse" />
+                  )}
                   {item.badge}
                 </span>
               )}

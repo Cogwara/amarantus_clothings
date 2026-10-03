@@ -113,7 +113,16 @@ export function AppShell({
                       <span>{item.name}</span>
                     </div>
                     {item.badge && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#FFF1E2] text-[#D96F0B]">
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 ${
+                          item.badge === 'Live'
+                            ? 'bg-[#EAF7EE] text-[#16803C]'
+                            : 'bg-[#FFF1E2] text-[#D96F0B]'
+                        }`}
+                      >
+                        {item.badge === 'Live' && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#16803C] animate-pulse" />
+                        )}
                         {item.badge}
                       </span>
                     )}

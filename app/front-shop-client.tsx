@@ -54,6 +54,11 @@ import { Modal } from '@/components/ui/modal';
 import { ImageLightbox } from '@/components/ui/image-lightbox';
 import { Logo } from '@/components/ui/logo';
 import { InstallAppButton } from '@/components/pwa/pwa-install';
+import {
+  trackStorefrontEvent,
+  sendPresenceHeartbeat,
+  trackDebouncedSearch,
+} from '@/lib/analytics-tracker';
 
 interface CartItem {
   product: Product;
@@ -271,7 +276,12 @@ export default function FrontShopClient() {
         fetch('/api/public/flash-sales').catch(() => null),
       ]);
       const data = await res.json();
-      if (data.products) setProducts(data.products);
+      if (data.products) {
+        setProducts(data.products);
+        if (search && search.trim().length >= 2) {
+          trackDebouncedSearch(search, data.products.length);
+        }
+      }
       if (data.categories) setCategories(data.categories);
       if (data.shop) setShop(data.shop);
 
@@ -296,6 +306,46 @@ export default function FrontShopClient() {
     loadStorefront();
   }, [loadStorefront]);
 
+  // Storefront presence tracking: initial page view and periodic heartbeat every 20s
+  React.useEffect(() => {
+    trackStorefrontEvent({
+      eventType: 'PAGE_VIEW',
+      pageUrl: typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/',
+      pageTitle: typeof document !== 'undefined' ? document.title : 'Amarantus Storefront',
+    });
+    sendPresenceHeartbeat();
+
+    const heartbeatTimer = setInterval(() => {
+      sendPresenceHeartbeat();
+    }, 20000);
+
+    return () => clearInterval(heartbeatTimer);
+  }, []);
+
+  // Track product modal view and update live presence
+  React.useEffect(() => {
+    if (detailProduct) {
+      trackStorefrontEvent({
+        eventType: 'ITEM_VIEW',
+        productId: detailProduct.id,
+        productName: detailProduct.name,
+        productSku: detailProduct.sku,
+        pageUrl: `/?item=${encodeURIComponent(detailProduct.sku || detailProduct.id)}`,
+        pageTitle: `Viewing ${detailProduct.name}`,
+        metadata: {
+          sellingPrice: detailProduct.sellingPrice,
+          condition: detailProduct.condition,
+          size: detailProduct.size,
+          category: detailProduct.categoryName,
+        },
+      });
+      sendPresenceHeartbeat(
+        `/?item=${encodeURIComponent(detailProduct.sku || detailProduct.id)}`,
+        `Viewing: ${detailProduct.name}`
+      );
+    }
+  }, [detailProduct?.id]);
+
   // Deep-link support: if ?item=SKU or ?item=ID is present in URL, auto-open Product Detail modal
   React.useEffect(() => {
     if (products.length === 0) return;
@@ -315,10 +365,70 @@ export default function FrontShopClient() {
     }
   }, [products]);
 
+  // Central product open handler that tracks item click
+  const handleOpenProduct = (p: Product, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setDetailProduct(p);
+    trackStorefrontEvent({
+      eventType: 'ITEM_CLICK',
+      productId: p.id,
+      productName: p.name,
+      productSku: p.sku,
+      pageUrl: `/?item=${encodeURIComponent(p.sku || p.id)}`,
+      pageTitle: `Viewing ${p.name}`,
+      metadata: {
+        sellingPrice: p.sellingPrice,
+        condition: p.condition,
+        size: p.size,
+        category: p.categoryName,
+      },
+    });
+    sendPresenceHeartbeat(
+      `/?item=${encodeURIComponent(p.sku || p.id)}`,
+      `Viewing: ${p.name}`
+    );
+  };
+
+  // WhatsApp redirection tracking handlers
+  const handleWhatsAppProductClick = (prod: Product, e?: React.MouseEvent) => {
+    trackStorefrontEvent({
+      eventType: 'WHATSAPP_REDIRECT',
+      productId: prod.id,
+      productName: prod.name,
+      productSku: prod.sku,
+      metadata: {
+        channel: 'whatsapp_product_order',
+        price: prod.sellingPrice,
+        condition: prod.condition,
+      },
+    });
+  };
+
+  const handleGeneralWhatsAppClick = (channel: string) => {
+    trackStorefrontEvent({
+      eventType: 'WHATSAPP_REDIRECT',
+      metadata: {
+        channel: channel || 'whatsapp_general',
+      },
+    });
+  };
+
   // Cart operations
   const addToCart = (product: Product, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (product.quantity <= 0) return;
+
+    trackStorefrontEvent({
+      eventType: 'ADD_TO_CART',
+      productId: product.id,
+      productName: product.name,
+      productSku: product.sku,
+      metadata: {
+        sellingPrice: product.sellingPrice,
+        size: product.size,
+        condition: product.condition,
+      },
+    });
 
     setCart((prev) => {
       const existing = prev.find((it) => it.product.id === product.id);
@@ -642,6 +752,7 @@ export default function FrontShopClient() {
               )},%20I%20want%20to%20inquire%20about%20your%20clothes.`}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => handleGeneralWhatsAppClick('header_chat')}
               className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-[8px] bg-[#EAF7EE] text-[#16803C] hover:bg-[#d5f2dd] text-xs font-bold transition-colors"
               title="Chat with shop on WhatsApp"
             >
@@ -732,7 +843,10 @@ export default function FrontShopClient() {
                     )},%20I%20need%20assistance%20with%20an%20order.`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={() => setHelpDropdownOpen(false)}
+                    onClick={() => {
+                      setHelpDropdownOpen(false);
+                      handleGeneralWhatsAppClick('help_dropdown_chat');
+                    }}
                     className="flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-[#16803C] bg-[#EAF7EE] hover:bg-[#d4f2dc] rounded-[8px] transition-colors mb-1.5"
                   >
                     <MessageCircle className="w-4 h-4 text-[#16803C]" />
@@ -1290,7 +1404,7 @@ export default function FrontShopClient() {
                 return (
                   <div
                     key={item.id || p.id}
-                    onClick={() => setDetailProduct(p)}
+                    onClick={() => handleOpenProduct(p)}
                     className="w-44 sm:w-48 shrink-0 bg-white rounded-[12px] border border-[#F0F4F1] hover:border-[#16803C] hover:shadow-cardHover transition-all p-2.5 cursor-pointer flex flex-col justify-between"
                   >
                     <div className="relative aspect-square w-full rounded-[10px] overflow-hidden bg-gray-100 mb-2">
@@ -1464,7 +1578,7 @@ export default function FrontShopClient() {
               return (
                 <div
                   key={p.id}
-                  onClick={() => setDetailProduct(p)}
+                  onClick={() => handleOpenProduct(p)}
                   className="group bg-white rounded-[14px] border border-[#DDE5DF] overflow-hidden flex flex-col justify-between hover:shadow-cardHover hover:border-[#16803C] transition-all cursor-pointer select-none"
                 >
                   {/* Photo & Badges */}
@@ -1499,7 +1613,7 @@ export default function FrontShopClient() {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setDetailProduct(p);
+                          handleOpenProduct(p);
                           setSelectedImageIndex(0);
                           setIsLightboxOpen(true);
                         }}
@@ -1869,6 +1983,7 @@ export default function FrontShopClient() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full block"
+                      onClick={() => handleWhatsAppProductClick(detailProduct)}
                     >
                       <Button
                         variant="secondary"
@@ -2224,6 +2339,7 @@ export default function FrontShopClient() {
               href={getWhatsAppCartLink(orderSuccess.order)}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => handleGeneralWhatsAppClick('cart_order_dispatch')}
               className="block"
             >
               <Button
@@ -2498,6 +2614,7 @@ export default function FrontShopClient() {
           )},%20I%20want%20to%20inquire%20about%20your%20clothes.`}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => handleGeneralWhatsAppClick('bottom_bar_chat')}
           className="flex flex-col items-center justify-center flex-1 py-1 text-center group cursor-pointer"
         >
           <MessageCircle className="w-5 h-5 text-[#16803C]" />
@@ -2650,6 +2767,7 @@ export default function FrontShopClient() {
                     )},%20I%20need%20assistance%20with%20an%20order.`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => handleGeneralWhatsAppClick('drawer_support_chat')}
                     className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[#16803C] bg-[#EAF7EE] hover:bg-[#d4f2dc] rounded-[10px] transition-colors"
                   >
                     <MessageCircle className="w-4 h-4 text-[#16803C]" />
