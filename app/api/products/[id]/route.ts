@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { query, ensureDiscountColumns } from '@/lib/db';
 import { getCurrentUser, logAudit } from '@/lib/auth';
 import { z } from 'zod';
 
@@ -84,6 +84,8 @@ export async function PUT(
     if (!user || user.role === 'STAFF') {
       return NextResponse.json({ error: 'Unauthorized to edit product' }, { status: 403 });
     }
+
+    await ensureDiscountColumns();
 
     const body = await request.json();
     const parsed = updateProductSchema.safeParse(body);

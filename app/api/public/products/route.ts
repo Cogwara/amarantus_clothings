@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { query, ensureDiscountColumns } from '@/lib/db';
 
 export async function GET(request: Request) {
   try {
+    await ensureDiscountColumns();
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const categoryId = searchParams.get('categoryId') || '';
@@ -81,7 +83,18 @@ export async function GET(request: Request) {
       sql += ` ORDER BY p."dateAdded" DESC`;
     }
 
-    const res = await query(sql, params);
+    let res;
+    try {
+      res = await query(sql, params);
+    } catch (queryErr: any) {
+      // Fallback if discountPercent column doesn't exist yet
+      if (queryErr?.message?.includes('discountPercent')) {
+        const fallbackSql = sql.replace('p."discountPercent",', 'NULL as "discountPercent",');
+        res = await query(fallbackSql, params);
+      } else {
+        throw queryErr;
+      }
+    }
 
     // Also get categories with counts
     const catRes = await query(`
@@ -93,28 +106,44 @@ export async function GET(request: Request) {
       ORDER BY c.name ASC
     `);
 
-    // Get shop profile
-    const shopRes = await query(`
-      SELECT 
-        name, 
-        phone, 
-        address, 
-        currency,
-        COALESCE("defaultDiscountPercent", 30) as "defaultDiscountPercent",
-        COALESCE("clearanceDiscountPercent", 50) as "clearanceDiscountPercent",
-        COALESCE("showDiscountBadges", true) as "showDiscountBadges"
-      FROM shops 
-      LIMIT 1
-    `);
-    const shop = shopRes.rows[0] || {
-      name: 'Amarantus Clothings',
-      phone: '+234 9065043549',
-      address: 'Plot 78 Gbazango Kubwa FCT',
-      currency: 'NGN',
-      defaultDiscountPercent: 30,
-      clearanceDiscountPercent: 50,
-      showDiscountBadges: true,
-    };
+    // Get shop profile with resilient fallback
+    let shop;
+    try {
+      const shopRes = await query(`
+        SELECT 
+          name, 
+          phone, 
+          address, 
+          currency,
+          COALESCE("defaultDiscountPercent", 30) as "defaultDiscountPercent",
+          COALESCE("clearanceDiscountPercent", 50) as "clearanceDiscountPercent",
+          COALESCE("showDiscountBadges", true) as "showDiscountBadges"
+        FROM shops 
+        LIMIT 1
+      `);
+      shop = shopRes.rows[0];
+    } catch {
+      const fallbackShopRes = await query(`
+        SELECT name, phone, address, currency FROM shops LIMIT 1
+      `);
+      shop = fallbackShopRes.rows[0];
+    }
+
+    if (!shop) {
+      shop = {
+        name: 'Amarantus Clothings',
+        phone: '+234 9065043549',
+        address: 'Plot 78 Gbazango Kubwa FCT',
+        currency: 'NGN',
+        defaultDiscountPercent: 30,
+        clearanceDiscountPercent: 50,
+        showDiscountBadges: true,
+      };
+    } else {
+      shop.defaultDiscountPercent = shop.defaultDiscountPercent ?? 30;
+      shop.clearanceDiscountPercent = shop.clearanceDiscountPercent ?? 50;
+      shop.showDiscountBadges = shop.showDiscountBadges ?? true;
+    }
 
     return NextResponse.json({
       products: res.rows,

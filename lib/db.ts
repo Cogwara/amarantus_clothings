@@ -65,4 +65,20 @@ export async function withTransaction<T>(
   }
 }
 
+let discountColumnsEnsured = false;
+export async function ensureDiscountColumns() {
+  if (discountColumnsEnsured) return;
+  try {
+    await pool.query(`
+      ALTER TABLE shops ADD COLUMN IF NOT EXISTS "defaultDiscountPercent" INT DEFAULT 30;
+      ALTER TABLE shops ADD COLUMN IF NOT EXISTS "clearanceDiscountPercent" INT DEFAULT 50;
+      ALTER TABLE shops ADD COLUMN IF NOT EXISTS "showDiscountBadges" BOOLEAN DEFAULT true;
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS "discountPercent" INT;
+    `);
+    discountColumnsEnsured = true;
+  } catch (err) {
+    console.error('Failed to ensure discount columns:', err);
+  }
+}
+
 export default pool;

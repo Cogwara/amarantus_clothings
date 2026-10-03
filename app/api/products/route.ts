@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query, withTransaction } from '@/lib/db';
+import { query, withTransaction, ensureDiscountColumns } from '@/lib/db';
 import { getCurrentUser, logAudit } from '@/lib/auth';
 import { z } from 'zod';
 
@@ -24,6 +24,8 @@ const createProductSchema = z.object({
 
 export async function GET(request: Request) {
   try {
+    await ensureDiscountColumns();
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const categoryId = searchParams.get('categoryId') || '';
@@ -113,7 +115,18 @@ export async function GET(request: Request) {
 
     sql += ` ORDER BY p."dateAdded" DESC`;
 
-    const res = await query(sql, params);
+    let res;
+    try {
+      res = await query(sql, params);
+    } catch (queryErr: any) {
+      if (queryErr?.message?.includes('discountPercent')) {
+        const fallbackSql = sql.replace('p."discountPercent",', 'NULL as "discountPercent",');
+        res = await query(fallbackSql, params);
+      } else {
+        throw queryErr;
+      }
+    }
+
     return NextResponse.json({ products: res.rows });
   } catch (error: any) {
     console.error('Error fetching products:', error);
@@ -126,6 +139,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    await ensureDiscountColumns();
     const user = await getCurrentUser();
     if (!user || user.role === 'STAFF') {
       return NextResponse.json(
